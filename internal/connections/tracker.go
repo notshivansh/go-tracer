@@ -88,6 +88,6 @@ func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
 func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
-	conn.closeTimestamp = event.TimestampNano
+	// conn.closeTimestamp = event.TimestampNano
 }
 

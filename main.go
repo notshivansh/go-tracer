@@ -1,33 +1,30 @@
 package main
 
 import (
-	"bufio"
+	// "bufio"
 	"bytes"
 	"encoding/binary"
-	"flag"
+	// "flag"
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
-	"unsafe"
-    "io/ioutil"
+	// "strconv"
+	// "strings"
+	// "unsafe"
+    // "io/ioutil"
 	"log"
 	"syscall"
 	"time"
 
-	bpf "github.com/iovisor/gobpf/bcc"
+	bcc "github.com/iovisor/gobpf/bcc"
 
 	"github.com/notshivansh/go-tracer/internal/bpfwrapper"
 	"github.com/notshivansh/go-tracer/internal/connections"
-	"github.com/notshivansh/go-tracer/internal/settings"
+	// "github.com/notshivansh/go-tracer/internal/settings"
 	"github.com/notshivansh/go-tracer/internal/structs"
-	"github.com/notshivansh/go-tracer/internal/utils"
-	"github.com/notshivansh/go-tracer/internal/privileges"
+	// "github.com/notshivansh/go-tracer/internal/utils"
+	// "github.com/notshivansh/go-tracer/internal/privileges"
 )
-
-
-
 
 import "C"
 
@@ -507,38 +504,77 @@ var (
 	}
 )
 
-type SocketOpenEvent struct {
-    id             uint64
-    fd             uint32
-    conn_start_ns  uint64
-    port           uint32
-    ip             uint32
-    socket_open_ns uint64
-}
-
 func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
 	for data := range inputChan {
 		if data == nil {
 			return
 		}
-		var event SocketOpenEvent
+		var event structs.SocketOpenEvent
 
 		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
 			log.Printf("Failed to decode received data: %+v", err)
 			continue
 		}
-		// event.TimestampNano += settings.GetRealTimeOffset()
 
-        // var connId struct.ConnID
-        
-        // connId.id = event.id
-        // connId.fd = event.fd
+        connId := structs.ConnID{event.id,event.fd}
+		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
-		// connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
+        fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.ip, event.port)
 
-		// if settings.DebugLog {
-			fmt.Printf("****************\nGot open event from client {ip: %d, port: %d}\n****************\n", event.ip, event.port)
+        }
+}
+
+func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
+	for data := range inputChan {
+		if data == nil {
+			return
+		}
+		var event structs.SocketCloseEvent
+		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
+			log.Printf("Failed to decode received data: %+v", err)
+			continue
+		}
+
+        connId := structs.ConnID{event.id,event.fd}
+		tracker := connectionFactory.Get(connId)
+		if tracker == nil {
+			continue
+		}
+		tracker.AddCloseEvent(event)
+
+        fmt.Println("##############\nGot close event from client\n##############")
+	}
+}
+
+var (
+	eventAttributesSize = int(unsafe.Sizeof(structs.SocketDataEventAttr{}))
+)
+
+func socketDataEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
+	for data := range inputChan {
+		if data == nil {
+			return
+		}
+		var event structs.SocketDataEvent
+
+		// binary.Read require the input data to be at the same size of the object.
+		// Since the Msg field might be mostly empty, binary.read fails.
+		// So we split the loading into the fixed size attribute parts, and copying the message separately.
+		if err := binary.Read(bytes.NewReader(data[:eventAttributesSize]), bcc.GetHostByteOrder(), &event.Attr); err != nil {
+			log.Printf("Failed to decode received data: %+v", err)
+			continue
+		}
+
+		// If there is at least single byte over the required minimum, thus we should copy it.
+		// if len(data) > eventAttributesSize {
+		// 	copy(event.msg[:], data[eventAttributesSize:eventAttributesSize+int(max(event.Attr.bytes_sent,0))])
 		// }
+        connId := structs.ConnID{event.Attr.id,event.Attr.fd}
+		// connectionFactory.GetOrCreate(connId).AddDataEvent(event)
+
+        fmt.Println("<------------")
+        fmt.Printf("Got data event of size %v, with data:", event.Attr.bytes_sent)
+        fmt.Println("------------>")
 	}
 }
 
@@ -549,7 +585,7 @@ func main() {
 
 func run(){
 	
-	bpfModule := bpf.NewBpfModule(source, []string{})
+	bpfModule := bcc.NewModule(source, []string{})
     if bpfModule == nil {
 		log.Panic("bpf is nil")
 	}
@@ -582,4 +618,9 @@ func run(){
 		log.Panic(err)
 	}
 
+    sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+    log.Println("Sniffer is ready")
+	<-sig
+	log.Println("Signaled to terminate")
 }

@@ -26,8 +26,8 @@ import "unsafe"
 //    int32_t fd;
 // };.
 type ConnID struct {
-	TGID uint32
-	FD   int32
+	TGID uint64
+	FD   uint32
 }
 
 // SockAddr is a conversion of the following C-Struct into GO.
@@ -113,15 +113,27 @@ func (s *SockAddrUnion) In6() *SockAddrIn6 {
 //     uint64_t pos;
 // };.
 type SocketDataEventAttr struct {
-	TimestampNano uint64
-	ConnID        ConnID
-	Direction     TrafficDirectionEnum
-	MsgSize       uint32
+	id             uint64
+	fd             uint32
+    conn_start_ns  uint64
+    port           uint16
+    ip             uint32
+	bytes_sent     int
 }
+
+/*
+u64 id;
+u32 fd;
+u64 conn_start_ns;
+unsigned short port;
+u32 ip;
+int bytes_sent;
+char msg[MAX_MSG_SIZE];
+*/
 
 type SocketDataEvent struct {
 	Attr SocketDataEventAttr
-	Msg  [399]byte
+	msg            [30720]byte
 }
 
 // SocketOpenEvent is a conversion of the following C-Struct into GO.
@@ -131,9 +143,12 @@ type SocketDataEvent struct {
 //    struct sockaddr_in* addr;
 //};.
 type SocketOpenEvent struct {
-	TimestampNano uint64
-	ConnID        ConnID
-	Addr          SockAddrUnion
+	id             uint64
+    fd             uint32
+    conn_start_ns  uint64
+    port           uint16
+    ip             uint32
+    socket_open_ns uint64
 }
 
 // SocketCloseEvent is a conversion of the following C-Struct into GO.
@@ -144,6 +159,10 @@ type SocketOpenEvent struct {
 //    int64_t rd_bytes;
 //};.
 type SocketCloseEvent struct {
-	TimestampNano uint64
-	ConnID        ConnID
+	id             uint64
+    fd             uint32
+    conn_start_ns  uint64
+    port           uint16
+    ip             uint32
+    socket_open_ns uint64
 }
