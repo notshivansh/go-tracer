@@ -516,10 +516,10 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
-        connId := structs.ConnID{event.id,event.fd}
+        connId := structs.ConnID{event.Id,event.Fd}
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
-        fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.ip, event.port)
+        fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.Ip, event.Port)
 
         }
 }
@@ -535,7 +535,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 			continue
 		}
 
-        connId := structs.ConnID{event.id,event.fd}
+        connId := structs.ConnID{event.Id,event.Fd}
 		tracker := connectionFactory.Get(connId)
 		if tracker == nil {
 			continue
@@ -569,11 +569,11 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 		// if len(data) > eventAttributesSize {
 		// 	copy(event.msg[:], data[eventAttributesSize:eventAttributesSize+int(max(event.Attr.bytes_sent,0))])
 		// }
-        connId := structs.ConnID{event.Attr.id,event.Attr.fd}
+        connId := structs.ConnID{event.Attr.Id,event.Attr.Fd}
 		// connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         fmt.Println("<------------")
-        fmt.Printf("Got data event of size %v, with data:", event.Attr.bytes_sent)
+        fmt.Printf("Got data event of size %v, with data:", event.Attr.Bytes_sent)
         fmt.Println("------------>")
 	}
 }

@@ -113,12 +113,12 @@ func (s *SockAddrUnion) In6() *SockAddrIn6 {
 //     uint64_t pos;
 // };.
 type SocketDataEventAttr struct {
-	id             uint64
-	fd             uint32
-	conn_start_ns  uint64
-	port           uint16
-	ip             uint32
-	bytes_sent     int
+	Id             uint64
+	Fd             uint32
+	Conn_start_ns  uint64
+	Port           uint16
+	Ip             uint32
+	Bytes_sent     int
 }
 
 /*
@@ -133,7 +133,7 @@ char msg[MAX_MSG_SIZE];
 
 type SocketDataEvent struct {
 	Attr SocketDataEventAttr
-	msg            [30720]byte
+	Msg            [30720]byte
 }
 
 // SocketOpenEvent is a conversion of the following C-Struct into GO.
@@ -143,12 +143,12 @@ type SocketDataEvent struct {
 //    struct sockaddr_in* addr;
 //};.
 type SocketOpenEvent struct {
-	id             uint64
-	fd             uint32
-	conn_start_ns  uint64
-	port           uint16
-	ip             uint32
-	socket_open_ns uint64
+	Id             uint64
+	Fd             uint32
+	Conn_start_ns  uint64
+	Port           uint16
+	Ip             uint32
+	Socket_open_ns uint64
 }
 
 // SocketCloseEvent is a conversion of the following C-Struct into GO.
@@ -159,10 +159,10 @@ type SocketOpenEvent struct {
 //    int64_t rd_bytes;
 //};.
 type SocketCloseEvent struct {
-	id             uint64
-	fd             uint32
-	conn_start_ns  uint64
-	port           uint16
-	ip             uint32
-	socket_open_ns uint64
+	Id             uint64
+	Fd             uint32
+	Conn_start_ns  uint64
+	Port           uint16
+	Ip             uint32
+	Socket_open_ns uint64
 }
