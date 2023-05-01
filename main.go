@@ -502,6 +502,49 @@ var (
 			IsSyscall:      true,
 		},
 	}
+
+    hooks = []bpfwrapper.Uprobe{
+		{
+			FunctionToHook: "SSL_write",
+			HookName:       "probe_entry_ssl_write",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_write",
+			HookName:       "probe_ret_ssl_write",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_read",
+			HookName:       "probe_entry_ssl_read",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_read",
+			HookName:       "probe_ret_ssl_read",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_write_ex",
+			HookName:       "probe_entry_ssl_write",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_write_ex",
+			HookName:       "probe_ret_ssl_write",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_read_ex",
+			HookName:       "probe_entry_ssl_read",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_read_ex",
+			HookName:       "probe_ret_ssl_read",
+			Type:           bpfwrapper.ReturnType,
+		},
+	}
 )
 
 func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
@@ -519,7 +562,7 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
         connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
-        fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.Ip, event.Port)
+        // fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.Ip, event.Port)
 
         }
 }
@@ -542,7 +585,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 		}
 		tracker.AddCloseEvent(event)
 
-        fmt.Println("##############\nGot close event from client\n##############")
+        // fmt.Println("##############\nGot close event from client\n##############")
 	}
 }
 
@@ -586,9 +629,9 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
         connId := structs.ConnID{event.Attr.Id, event.Attr.Fd, event.Attr.Conn_start_ns, event.Attr.Port, event.Attr.Ip}
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
-        fmt.Println("<------------")
-        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:Abs(bytesSent)])
-        fmt.Println("------------>")
+        // fmt.Println("<------------")
+        // fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:Abs(bytesSent)])
+        // fmt.Println("------------>")
 	}
 }
 
@@ -629,6 +672,10 @@ func run(){
 	}
 
 	if err := bpfwrapper.AttachKprobes(bpfModule, hooks); err != nil {
+		log.Panic(err)
+	}
+
+    if err := bpfwrapper.AttachUprobes("/usr/lib64/libssl.so.10", -1, bpfModule, hooks); err != nil {
 		log.Panic(err)
 	}
 

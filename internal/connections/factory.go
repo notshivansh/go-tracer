@@ -55,6 +55,9 @@ func (factory *Factory) HandleReadyConnections() {
 			if !settings.DebugLog {
 				fmt.Printf("========================>\nFound HTTP payload\nRequest->\n%s\n\nResponse->\n%s\n\n<========================\n", tracker.recvBuf, tracker.sentBuf)
 			}
+
+			
+
 		}
 	}
 	factory.mutex.Lock()
