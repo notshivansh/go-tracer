@@ -572,15 +572,16 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
+        bytesSent := (event.Attr.Bytes_sent>>32)>>16
 		// If there is at least single byte over the required minimum, thus we should copy it.
 		if len(data) > eventAttributesSize {
-			copy(event.Msg[:], data[eventAttributesSize:eventAttributesSize+int(Abs(event.Attr.Bytes_sent))])
+			copy(event.Msg[:], data[eventAttributesSize:eventAttributesSize+int(Abs(bytesSent))])
 		}
         connId := structs.ConnID{event.Attr.Id,event.Attr.Fd}
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         fmt.Println("<------------")
-        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:Abs(event.Attr.Bytes_sent)])
+        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:Abs(bytesSent)])
         fmt.Println("------------>")
 	}
 }
