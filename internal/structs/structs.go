@@ -118,7 +118,7 @@ type SocketDataEventAttr struct {
 	Conn_start_ns  uint64
 	Port           uint16
 	Ip             uint32
-	Bytes_sent     int
+	Bytes_sent     int64
 }
 
 /*
