@@ -1,4 +1,4 @@
-module github.com/notshivansh/go-tracer
+module go-tracer
 
 go 1.20
 

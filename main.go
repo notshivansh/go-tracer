@@ -18,10 +18,10 @@ import (
 
 	bcc "github.com/iovisor/gobpf/bcc"
 
-	"github.com/notshivansh/go-tracer/internal/bpfwrapper"
-	"github.com/notshivansh/go-tracer/internal/connections"
+	"go-tracer/internal/bpfwrapper"
+	"go-tracer/internal/connections"
 	// "github.com/notshivansh/go-tracer/internal/settings"
-	"github.com/notshivansh/go-tracer/internal/structs"
+	"go-tracer/internal/structs"
 	// "github.com/notshivansh/go-tracer/internal/utils"
 	// "github.com/notshivansh/go-tracer/internal/privileges"
 )

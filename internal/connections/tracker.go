@@ -19,7 +19,7 @@
 package connections
 
 import (
-	"log"
+	// "log"
 	"sync"
 
 	"github.com/notshivansh/go-tracer/internal/structs"
