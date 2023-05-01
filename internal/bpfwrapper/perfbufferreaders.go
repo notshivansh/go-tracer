@@ -22,7 +22,7 @@ import (
 	"fmt"
 	bpf "github.com/iovisor/gobpf/bcc"
 
-	"github.com/notshivansh/go-tracer/internal/connections"
+	"go-tracer/internal/connections"
 )
 
 // ProbeEventLoop is the signature for the callback functions to extract the events from the input channel.

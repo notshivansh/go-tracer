@@ -3,7 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/notshivansh/go-tracer/internal/structs"
+	"go-tracer/internal/structs"
 	"net"
 )
 

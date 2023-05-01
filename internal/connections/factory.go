@@ -20,11 +20,11 @@ package connections
 
 import (
 	"fmt"
-	"github.com/notshivansh/go-tracer/internal/settings"
+	"go-tracer/internal/settings"
 	"sync"
 	"time"
 
-	"github.com/notshivansh/go-tracer/internal/structs"
+	"go-tracer/internal/structs"
 )
 
 // Factory is a routine-safe container that holds a trackers with unique ID, and able to create new tracker.
