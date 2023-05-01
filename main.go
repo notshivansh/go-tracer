@@ -582,8 +582,8 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 		if len(data) > eventAttributesLogicalSize {
 			copy(event.Msg[:], data[eventAttributesLogicalSize:eventAttributesLogicalSize+int(Abs(bytesSent))])
 		}
-        
-        connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
+
+        connId := structs.ConnID{event.Attr.Id, event.Attr.Fd, event.Attr.Conn_start_ns, event.Attr.Port, event.Attr.Ip}
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         fmt.Println("<------------")
