@@ -64,25 +64,25 @@ func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 
-	switch event.Attr.Direction {
-	case structs.EgressTraffic:
-		conn.sentBuf = append(conn.sentBuf, event.Msg[:event.Attr.MsgSize]...)
-		conn.sentBytes += uint64(event.Attr.MsgSize)
-	case structs.IngressTraffic:
-		conn.recvBuf = append(conn.recvBuf, event.Msg[:event.Attr.MsgSize]...)
-		conn.recvBytes += uint64(event.Attr.MsgSize)
-	default:
-	}
+	// switch event.Attr.Direction {
+	// case structs.EgressTraffic:
+	// 	conn.sentBuf = append(conn.sentBuf, event.Msg[:event.Attr.MsgSize]...)
+	// 	conn.sentBytes += uint64(event.Attr.MsgSize)
+	// case structs.IngressTraffic:
+	// 	conn.recvBuf = append(conn.recvBuf, event.Msg[:event.Attr.MsgSize]...)
+	// 	conn.recvBytes += uint64(event.Attr.MsgSize)
+	// default:
+	// }
 }
 
 func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
-	conn.addr = event.Addr
-	if conn.openTimestamp != 0 && conn.openTimestamp != event.TimestampNano {
-		log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.TimestampNano)
-	}
-	conn.openTimestamp = event.TimestampNano
+	// conn.addr = event.Addr
+	// if conn.openTimestamp != 0 && conn.openTimestamp != event.TimestampNano {
+	// 	log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.TimestampNano)
+	// }
+	// conn.openTimestamp = event.TimestampNano
 }
 
 func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {

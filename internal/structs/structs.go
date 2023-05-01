@@ -115,9 +115,9 @@ func (s *SockAddrUnion) In6() *SockAddrIn6 {
 type SocketDataEventAttr struct {
 	id             uint64
 	fd             uint32
-    conn_start_ns  uint64
-    port           uint16
-    ip             uint32
+	conn_start_ns  uint64
+	port           uint16
+	ip             uint32
 	bytes_sent     int
 }
 
@@ -144,11 +144,11 @@ type SocketDataEvent struct {
 //};.
 type SocketOpenEvent struct {
 	id             uint64
-    fd             uint32
-    conn_start_ns  uint64
-    port           uint16
-    ip             uint32
-    socket_open_ns uint64
+	fd             uint32
+	conn_start_ns  uint64
+	port           uint16
+	ip             uint32
+	socket_open_ns uint64
 }
 
 // SocketCloseEvent is a conversion of the following C-Struct into GO.
@@ -160,9 +160,9 @@ type SocketOpenEvent struct {
 //};.
 type SocketCloseEvent struct {
 	id             uint64
-    fd             uint32
-    conn_start_ns  uint64
-    port           uint16
-    ip             uint32
-    socket_open_ns uint64
+	fd             uint32
+	conn_start_ns  uint64
+	port           uint16
+	ip             uint32
+	socket_open_ns uint64
 }
