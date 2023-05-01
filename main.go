@@ -11,7 +11,6 @@ import (
 	// "strconv"
 	// "strings"
 	"unsafe"
-    "math"
     // "io/ioutil"
 	"log"
 	"syscall"
@@ -551,6 +550,13 @@ var (
 	eventAttributesSize = int(unsafe.Sizeof(structs.SocketDataEventAttr{}))
 )
 
+func Abs(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func socketDataEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
 	for data := range inputChan {
 		if data == nil {
@@ -568,13 +574,13 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 
 		// If there is at least single byte over the required minimum, thus we should copy it.
 		if len(data) > eventAttributesSize {
-			copy(event.msg[:], data[eventAttributesSize:eventAttributesSize+int(math.Abs(event.Attr.Bytes_sent))])
+			copy(event.Msg[:], data[eventAttributesSize:eventAttributesSize+int(Abs(event.Attr.Bytes_sent))])
 		}
         connId := structs.ConnID{event.Attr.Id,event.Attr.Fd}
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         fmt.Println("<------------")
-        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:math.Abs(event.Attr.Bytes_sent)])
+        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:Abs(event.Attr.Bytes_sent)])
         fmt.Println("------------>")
 	}
 }
