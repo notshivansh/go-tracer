@@ -516,7 +516,7 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
-        connId := structs.ConnID{event.Id,event.Fd}
+        connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
         fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.Ip, event.Port)
@@ -535,7 +535,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 			continue
 		}
 
-        connId := structs.ConnID{event.Id,event.Fd}
+        connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
 		tracker := connectionFactory.Get(connId)
 		if tracker == nil {
 			continue
@@ -547,6 +547,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 }
 
 var (
+    // this also includes size lost in padding.
 	eventAttributesSize = int(unsafe.Sizeof(structs.SocketDataEventAttr{}))
 )
 
@@ -567,6 +568,7 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 		// binary.Read require the input data to be at the same size of the object.
 		// Since the Msg field might be mostly empty, binary.read fails.
 		// So we split the loading into the fixed size attribute parts, and copying the message separately.
+
 		if err := binary.Read(bytes.NewReader(data[:eventAttributesSize]), bcc.GetHostByteOrder(), &event.Attr); err != nil {
 			log.Printf("Failed to decode received data: %+v", err)
 			continue
@@ -574,10 +576,14 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 
         bytesSent := (event.Attr.Bytes_sent>>32)>>16
 		// If there is at least single byte over the required minimum, thus we should copy it.
-		if len(data) > eventAttributesSize {
-			copy(event.Msg[:], data[eventAttributesSize:eventAttributesSize+int(Abs(bytesSent))])
+        
+        eventAttributesLogicalSize := 36
+
+		if len(data) > eventAttributesLogicalSize {
+			copy(event.Msg[:], data[eventAttributesLogicalSize:eventAttributesLogicalSize+int(Abs(bytesSent))])
 		}
-        connId := structs.ConnID{event.Attr.Id,event.Attr.Fd}
+        
+        connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         fmt.Println("<------------")

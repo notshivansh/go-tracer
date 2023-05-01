@@ -23,16 +23,17 @@ import (
 	"sync"
 
 	"go-tracer/internal/structs"
+	"go-tracer/internal/settings"
 )
 
 const (
+	// should be 30KB
 	maxBufferSize = 100 * 1024 // 100KB
 )
 
 type Tracker struct {
 	connID structs.ConnID
 
-	addr           structs.SockAddrUnion
 	openTimestamp  uint64
 	closeTimestamp uint64
 
@@ -60,34 +61,42 @@ func (conn *Tracker) IsComplete() bool {
 	return conn.closeTimestamp != 0
 }
 
+func Abs(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 
-	// switch event.Attr.Direction {
-	// case structs.EgressTraffic:
-	// 	conn.sentBuf = append(conn.sentBuf, event.Msg[:event.Attr.MsgSize]...)
-	// 	conn.sentBytes += uint64(event.Attr.MsgSize)
-	// case structs.IngressTraffic:
-	// 	conn.recvBuf = append(conn.recvBuf, event.Msg[:event.Attr.MsgSize]...)
-	// 	conn.recvBytes += uint64(event.Attr.MsgSize)
-	// default:
-	// }
+	bytesSent := (event.Attr.Bytes_sent>>32)>>16
+
+	if bytesSent > 0 {
+		conn.sentBuf = append(conn.sentBuf, event.Msg[:Abs(bytesSent)]...)
+		conn.sentBytes += uint64(Abs(bytesSent))
+	} else {
+		conn.recvBuf = append(conn.recvBuf, event.Msg[:Abs(bytesSent)]...)
+		conn.recvBytes += uint64(Abs(bytesSent))
+	}
 }
 
 func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
-	// conn.addr = event.Addr
-	// if conn.openTimestamp != 0 && conn.openTimestamp != event.TimestampNano {
-	// 	log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.TimestampNano)
-	// }
-	// conn.openTimestamp = event.TimestampNano
+
+	if conn.openTimestamp != 0 && conn.openTimestamp != event.Conn_start_ns {
+		log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.Conn_start_ns)
+	}
+	conn.openTimestamp = event.Conn_start_ns
 }
 
 func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
-	// conn.closeTimestamp = event.TimestampNano
+	
+	conn.closeTimestamp = event.Conn_start_ns + settings.GetRealTimeOffset()
 }
 

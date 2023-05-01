@@ -26,8 +26,11 @@ import "unsafe"
 //    int32_t fd;
 // };.
 type ConnID struct {
-	TGID uint64
-	FD   uint32
+	Id             uint64
+	Fd             uint32
+	Conn_start_ns  uint64
+	Port           uint16
+	Ip             uint32
 }
 
 // SockAddr is a conversion of the following C-Struct into GO.
