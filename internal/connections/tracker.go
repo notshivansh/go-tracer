@@ -22,7 +22,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/seek-ret/ebpf-training/workshop3/internal/structs"
+	"github.com/notshivansh/go-tracer/internal/structs"
 )
 
 const (

@@ -18,12 +18,12 @@ import (
 
 	bpf "github.com/iovisor/gobpf/bcc"
 
-	"./internal/bpfwrapper"
-	"./internal/connections"
-	"./internal/settings"
-	"./internal/structs"
-	"./internal/utils"
-	"./internal/privileges"
+	"github.com/notshivansh/go-tracer/internal/bpfwrapper"
+	"github.com/notshivansh/go-tracer/internal/connections"
+	"github.com/notshivansh/go-tracer/internal/settings"
+	"github.com/notshivansh/go-tracer/internal/structs"
+	"github.com/notshivansh/go-tracer/internal/utils"
+	"github.com/notshivansh/go-tracer/internal/privileges"
 )
 
 
@@ -529,16 +529,16 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 		}
 		// event.TimestampNano += settings.GetRealTimeOffset()
 
-        var connId struct.ConnID
+        // var connId struct.ConnID
         
-        connId.id = event.id
-        connId.fd = event.fd
+        // connId.id = event.id
+        // connId.fd = event.fd
 
-		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
+		// connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
-		if settings.DebugLog {
+		// if settings.DebugLog {
 			fmt.Printf("****************\nGot open event from client {ip: %d, port: %d}\n****************\n", event.ip, event.port)
-		}
+		// }
 	}
 }
 
