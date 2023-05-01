@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	// "flag"
-	"fmt"
+	// "fmt"
 	"os"
 	"os/signal"
 	// "strconv"
@@ -503,7 +503,7 @@ var (
 		},
 	}
 
-    hooks = []bpfwrapper.Uprobe{
+    sslHooks = []bpfwrapper.Uprobe{
 		{
 			FunctionToHook: "SSL_write",
 			HookName:       "probe_entry_ssl_write",
@@ -675,7 +675,7 @@ func run(){
 		log.Panic(err)
 	}
 
-    if err := bpfwrapper.AttachUprobes("/usr/lib64/libssl.so.10", -1, bpfModule, hooks); err != nil {
+    if err := bpfwrapper.AttachUprobes("/usr/lib64/libssl.so.10", -1, bpfModule, sslHooks); err != nil {
 		log.Panic(err)
 	}
 

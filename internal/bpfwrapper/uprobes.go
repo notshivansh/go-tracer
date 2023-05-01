@@ -6,15 +6,6 @@ import (
 	"log"
 )
 
-// ProbeType represents whether the probe is an entry or a return.
-type ProbeType int
-
-const (
-	EntryType  ProbeType = 0
-	ReturnType ProbeType = 1
-
-)
-
 // Uprobe represents a single uprobe hook.
 type Uprobe struct {
 	// The name of the function to hook.
