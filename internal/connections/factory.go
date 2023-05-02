@@ -19,17 +19,17 @@
 package connections
 
 import (
-	"fmt"
-	"go-tracer/internal/settings"
+	// "fmt"
+	// "go-tracer/internal/settings"
 	"sync"
 	"time"
-	"bufio"
-    "bytes"
-    "io"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "net/http/httputil"
+	// "bufio"
+    // "bytes"
+    // "io"
+    // "io/ioutil"
+    // "log"
+    // "net/http"
+    // "net/http/httputil"
 
 	"go-tracer/internal/structs"
 	"github.com/segmentio/kafka-go"
@@ -51,10 +51,10 @@ func NewFactory(inactivityThreshold time.Duration) *Factory {
 	}
 }
 
-type Connection struct {
-    Request  *http.Request
-    Response *http.Response
-}
+// type Connection struct {
+//     Request  *http.Request
+//     Response *http.Response
+// }
 
 // func ReadHTTPData(tracker *Tracker) ([]Connection, error) {
 //     bufR := bufio.NewReader(bytes.NewReader(tracker.recvBuf))

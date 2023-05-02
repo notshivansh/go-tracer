@@ -18,6 +18,7 @@ import (
 
 	bcc "github.com/iovisor/gobpf/bcc"
 
+    "github.com/segmentio/kafka-go"
 	"go-tracer/internal/bpfwrapper"
 	"go-tracer/internal/connections"
 	// "github.com/notshivansh/go-tracer/internal/settings"

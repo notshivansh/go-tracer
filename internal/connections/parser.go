@@ -22,8 +22,8 @@ import (
 	// "github.com/google/gopacket/pcap"
 	// "github.com/google/gopacket/tcpassembly"
 
-	"github.com/akto-api-security/gomiddleware"
-	// "github.com/segmentio/kafka-go"
+	// "github.com/akto-api-security/gomiddleware"
+	"github.com/segmentio/kafka-go"
 )
 
 
@@ -127,7 +127,7 @@ func tryReadFromBD(tracker *Tracker, kafkaWriter *kafka.Writer) {
 			"status":          resp.Status,
 			"akto_account_id": fmt.Sprint(1000000),
 			"akto_vxlan_id":   "",
-			"is_pending":      false,
+			"is_pending":      "false",
 			"source":          "EBPF",
 		}
 
@@ -139,7 +139,7 @@ func tryReadFromBD(tracker *Tracker, kafkaWriter *kafka.Writer) {
 		// hostString := reqHeader["host"]
 		// fmt.Printf("value: %v",value)
 		for k, v := range value {
-			fmt.Println(k, "value is", v)
+			fmt.Println(k, ":", v)
 		}
 		
 		// if utils.CheckIfIpHost(hostString) {

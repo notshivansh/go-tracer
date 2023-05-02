@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 	"go-tracer/internal/structs"
-	"go-tracer/internal/settings"
+	// "go-tracer/internal/settings"
 )
 
 const (
@@ -97,6 +97,6 @@ func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 	
-	conn.closeTimestamp = event.Conn_start_ns + time.Now().Unix()
+	conn.closeTimestamp = event.Conn_start_ns + uint64(time.Now().Unix())
 }
 
