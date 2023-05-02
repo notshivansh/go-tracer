@@ -32,6 +32,7 @@ import (
     "net/http/httputil"
 
 	"go-tracer/internal/structs"
+	"github.com/segmentio/kafka-go"
 )
 
 // Factory is a routine-safe container that holds a trackers with unique ID, and able to create new tracker.
@@ -55,39 +56,39 @@ type Connection struct {
     Response *http.Response
 }
 
-func ReadHTTPData(tracker *Tracker) ([]Connection, error) {
-    bufR := bufio.NewReader(bytes.NewReader(tracker.recvBuf))
-	bufS := bufio.NewReader(bytes.NewReader(tracker.sendBuf))
-    stream := make([]Connection, 0)
+// func ReadHTTPData(tracker *Tracker) ([]Connection, error) {
+//     bufR := bufio.NewReader(bytes.NewReader(tracker.recvBuf))
+// 	bufS := bufio.NewReader(bytes.NewReader(tracker.sendBuf))
+//     stream := make([]Connection, 0)
 
-    for {
-        req, err := http.ReadRequest(bufR)
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            return stream, err
-        }
+//     for {
+//         req, err := http.ReadRequest(bufR)
+//         if err == io.EOF {
+//             break
+//         }
+//         if err != nil {
+//             return stream, err
+//         }
 
-        resp, err := http.ReadResponse(bufS, req)
-        if err != nil {
-            return stream, err
-        }
+//         resp, err := http.ReadResponse(bufS, req)
+//         if err != nil {
+//             return stream, err
+//         }
 
-        //save response body
-        b := new(bytes.Buffer)
-        io.Copy(b, resp.Body)
-        resp.Body.Close()
-        resp.Body = ioutil.NopCloser(b)
+//         //save response body
+//         b := new(bytes.Buffer)
+//         io.Copy(b, resp.Body)
+//         resp.Body.Close()
+//         resp.Body = ioutil.NopCloser(b)
 
-        stream = append(stream, Connection{Request: req, Response: resp})
-    }
-    return stream, nil
+//         stream = append(stream, Connection{Request: req, Response: resp})
+//     }
+//     return stream, nil
 
-}
+// }
 
 
-func (factory *Factory) HandleReadyConnections() {
+func (factory *Factory) HandleReadyConnections(kafkaWriter *kafka.Writer) {
 	trackersToDelete := make(map[structs.ConnID]struct{})
 
 	for connID, tracker := range factory.connections {
@@ -96,26 +97,27 @@ func (factory *Factory) HandleReadyConnections() {
 			if len(tracker.sentBuf) == 0 && len(tracker.recvBuf) == 0 {
 				continue
 			}
-			if !settings.DebugLog {
-				fmt.Printf("========================>\nFound HTTP payload\nRequest->\n%s\n\nResponse->\n%s\n\n<========================\n", tracker.recvBuf, tracker.sentBuf)
-			}
+			// if !settings.DebugLog {
+			// 	fmt.Printf("========================>\nFound HTTP payload\nRequest->\n%s\n\nResponse->\n%s\n\n<========================\n", tracker.recvBuf, tracker.sentBuf)
+			// }
 
-			stream, err := ReadHTTPFromFile(tracker)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			for _, c := range stream {
-				b, err := httputil.DumpRequest(c.Request, true)
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Println(string(b))
-				b, err = httputil.DumpResponse(c.Response, true)
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Println(string(b))
-			}
+			tryReadFromBD(tracker, kafkaWriter)
+			// stream, err := ReadHTTPFromFile(tracker)
+			// if err != nil {
+			// 	log.Fatalln(err)
+			// }
+			// for _, c := range stream {
+			// 	b, err := httputil.DumpRequest(c.Request, true)
+			// 	if err != nil {
+			// 		log.Fatal(err)
+			// 	}
+			// 	fmt.Println(string(b))
+			// 	b, err = httputil.DumpResponse(c.Response, true)
+			// 	if err != nil {
+			// 		log.Fatal(err)
+			// 	}
+			// 	fmt.Println(string(b))
+			// }
 
 		}
 	}

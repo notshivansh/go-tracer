@@ -648,10 +648,35 @@ func run(){
 	}
 	defer bpfModule.Close()
 
+    var kafkaWriter *kafka.Writer
+
+    // kafka_url := os.Getenv("AKTO_KAFKA_BROKER_MAL")
+	// log.Println("kafka_url", kafka_url)
+
+	// if len(kafka_url) == 0 {
+	// 	kafka_url = os.Getenv("AKTO_KAFKA_BROKER_URL")
+	// }
+	// log.Println("kafka_url", kafka_url)
+
+	// kafka_batch_size, e := strconv.Atoi(os.Getenv("AKTO_TRAFFIC_BATCH_SIZE"))
+	// if e != nil {
+	// 	log.Printf("AKTO_TRAFFIC_BATCH_SIZE should be valid integer")
+	// 	return
+	// }
+
+	// kafka_batch_time_secs, e := strconv.Atoi(os.Getenv("AKTO_TRAFFIC_BATCH_TIME_SECS"))
+	// if e != nil {
+	// 	log.Printf("AKTO_TRAFFIC_BATCH_TIME_SECS should be valid integer")
+	// 	return
+	// }
+	// kafka_batch_time_secs_duration := time.Duration(kafka_batch_time_secs)
+
+	// kafkaWriter = gomiddleware.GetKafkaWriter(kafka_url, "akto.api.logs", kafka_batch_size, kafka_batch_time_secs_duration*time.Second)
+
     connectionFactory := connections.NewFactory(time.Minute)
 	go func() {
 		for {
-			connectionFactory.HandleReadyConnections()
+			connectionFactory.HandleReadyConnections(kafkaWriter)
 			time.Sleep(1 * time.Second)
 		}
 	}()
