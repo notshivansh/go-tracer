@@ -23,6 +23,13 @@ import (
 	"go-tracer/internal/settings"
 	"sync"
 	"time"
+	"bufio"
+    "bytes"
+    "io"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "net/http/httputil"
 
 	"go-tracer/internal/structs"
 )
@@ -43,6 +50,43 @@ func NewFactory(inactivityThreshold time.Duration) *Factory {
 	}
 }
 
+type Connection struct {
+    Request  *http.Request
+    Response *http.Response
+}
+
+func ReadHTTPData(tracker *Tracker) ([]Connection, error) {
+    bufR := bufio.NewReader(bytes.NewReader(tracker.recvBuf))
+	bufS := bufio.NewReader(bytes.NewReader(tracker.sendBuf))
+    stream := make([]Connection, 0)
+
+    for {
+        req, err := http.ReadRequest(bufR)
+        if err == io.EOF {
+            break
+        }
+        if err != nil {
+            return stream, err
+        }
+
+        resp, err := http.ReadResponse(bufS, req)
+        if err != nil {
+            return stream, err
+        }
+
+        //save response body
+        b := new(bytes.Buffer)
+        io.Copy(b, resp.Body)
+        resp.Body.Close()
+        resp.Body = ioutil.NopCloser(b)
+
+        stream = append(stream, Connection{Request: req, Response: resp})
+    }
+    return stream, nil
+
+}
+
+
 func (factory *Factory) HandleReadyConnections() {
 	trackersToDelete := make(map[structs.ConnID]struct{})
 
@@ -56,7 +100,22 @@ func (factory *Factory) HandleReadyConnections() {
 				fmt.Printf("========================>\nFound HTTP payload\nRequest->\n%s\n\nResponse->\n%s\n\n<========================\n", tracker.recvBuf, tracker.sentBuf)
 			}
 
-			
+			stream, err := ReadHTTPFromFile(tracker)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			for _, c := range stream {
+				b, err := httputil.DumpRequest(c.Request, true)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(string(b))
+				b, err = httputil.DumpResponse(c.Response, true)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(string(b))
+			}
 
 		}
 	}

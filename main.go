@@ -524,26 +524,26 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-		{
-			FunctionToHook: "SSL_write_ex",
-			HookName:       "probe_entry_SSL_write",
-			Type:           bpfwrapper.EntryType,
-		},
-		{
-			FunctionToHook: "SSL_write_ex",
-			HookName:       "probe_ret_SSL_write",
-			Type:           bpfwrapper.ReturnType,
-		},
-		{
-			FunctionToHook: "SSL_read_ex",
-			HookName:       "probe_entry_SSL_read",
-			Type:           bpfwrapper.EntryType,
-		},
-		{
-			FunctionToHook: "SSL_read_ex",
-			HookName:       "probe_ret_SSL_read",
-			Type:           bpfwrapper.ReturnType,
-		},
+		// {
+		// 	FunctionToHook: "SSL_write_ex",
+		// 	HookName:       "probe_entry_SSL_write",
+		// 	Type:           bpfwrapper.EntryType,
+		// },
+		// {
+		// 	FunctionToHook: "SSL_write_ex",
+		// 	HookName:       "probe_ret_SSL_write",
+		// 	Type:           bpfwrapper.ReturnType,
+		// },
+		// {
+		// 	FunctionToHook: "SSL_read_ex",
+		// 	HookName:       "probe_entry_SSL_read",
+		// 	Type:           bpfwrapper.EntryType,
+		// },
+		// {
+		// 	FunctionToHook: "SSL_read_ex",
+		// 	HookName:       "probe_ret_SSL_read",
+		// 	Type:           bpfwrapper.ReturnType,
+		// },
 	}
 )
 
@@ -675,7 +675,7 @@ func run(){
 		log.Panic(err)
 	}
 
-    if err := bpfwrapper.AttachUprobes("/usr/lib64/libssl.so.10", -1, bpfModule, sslHooks); err != nil {
+    if err := bpfwrapper.AttachUprobes("/usr/lib64/ssl/libssl.so.10", -1, bpfModule, sslHooks); err != nil {
 		log.Panic(err)
 	}
 
