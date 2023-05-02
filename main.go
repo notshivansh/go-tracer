@@ -506,42 +506,42 @@ var (
     sslHooks = []bpfwrapper.Uprobe{
 		{
 			FunctionToHook: "SSL_write",
-			HookName:       "probe_entry_ssl_write",
+			HookName:       "probe_entry_SSL_write",
 			Type:           bpfwrapper.EntryType,
 		},
 		{
 			FunctionToHook: "SSL_write",
-			HookName:       "probe_ret_ssl_write",
+			HookName:       "probe_ret_SSL_write",
 			Type:           bpfwrapper.ReturnType,
 		},
 		{
 			FunctionToHook: "SSL_read",
-			HookName:       "probe_entry_ssl_read",
+			HookName:       "probe_entry_SSL_read",
 			Type:           bpfwrapper.EntryType,
 		},
 		{
 			FunctionToHook: "SSL_read",
-			HookName:       "probe_ret_ssl_read",
+			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
 		{
 			FunctionToHook: "SSL_write_ex",
-			HookName:       "probe_entry_ssl_write",
+			HookName:       "probe_entry_SSL_write",
 			Type:           bpfwrapper.EntryType,
 		},
 		{
 			FunctionToHook: "SSL_write_ex",
-			HookName:       "probe_ret_ssl_write",
+			HookName:       "probe_ret_SSL_write",
 			Type:           bpfwrapper.ReturnType,
 		},
 		{
 			FunctionToHook: "SSL_read_ex",
-			HookName:       "probe_entry_ssl_read",
+			HookName:       "probe_entry_SSL_read",
 			Type:           bpfwrapper.EntryType,
 		},
 		{
 			FunctionToHook: "SSL_read_ex",
-			HookName:       "probe_ret_ssl_read",
+			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
 	}
