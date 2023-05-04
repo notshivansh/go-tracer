@@ -384,7 +384,7 @@ static void set_conn_as_ssl(u32 tgid, u32 fd){
     conn_info->ssl = true;
 }
 
-void probe_entry_SSL_write_core(struct pt_regs *ctx, void *ssl, void *buf, int num){
+static void probe_entry_SSL_write_core(struct pt_regs *ctx, void *ssl, void *buf, int num, u32 fd){
   u64 id = bpf_get_current_pid_tgid();
   u32 tgid = id >> 32;
 
@@ -401,13 +401,13 @@ void probe_entry_SSL_write_core(struct pt_regs *ctx, void *ssl, void *buf, int n
 
 int probe_entry_SSL_write(struct pt_regs *ctx, void *ssl, void *buf, int num) {
     u32 fd = get_fd(ssl, false);
-    probe_entry_SSL_write_core(ctx, ssl, buf, num);
+    probe_entry_SSL_write_core(ctx, ssl, buf, num, fd);
   return 0;
 }
 
 int probe_entry_SSL_write_boring(struct pt_regs *ctx, void *ssl, void *buf, int num) {
     u32 fd = get_fd(ssl, true);
-    probe_entry_SSL_write_core(ctx, ssl, buf, num);
+    probe_entry_SSL_write_core(ctx, ssl, buf, num, fd);
   return 0;
 }
 
@@ -423,7 +423,7 @@ int probe_ret_SSL_write(struct pt_regs* ctx) {
   return 0;
 }
 
-void probe_entry_SSL_read_core(struct pt_regs *ctx, void *ssl, void *buf, int num){
+static void probe_entry_SSL_read_core(struct pt_regs *ctx, void *ssl, void *buf, int num, u32 fd){
     u64 id = bpf_get_current_pid_tgid();
   u32 tgid = id >> 32;
 
@@ -440,14 +440,14 @@ void probe_entry_SSL_read_core(struct pt_regs *ctx, void *ssl, void *buf, int nu
 
 int probe_entry_SSL_read(struct pt_regs *ctx, void *ssl, void *buf, int num) {
     int32_t fd = get_fd(ssl, false);
-    probe_entry_SSL_read_core(ctx, ssl, buf, num);
+    probe_entry_SSL_read_core(ctx, ssl, buf, num, fd);
 
   return 0;
 }
 
 int probe_entry_SSL_read_boring(struct pt_regs *ctx, void *ssl, void *buf, int num) {
     int32_t fd = get_fd(ssl, true);
-    probe_entry_SSL_read_core(ctx, ssl, buf, num);
+    probe_entry_SSL_read_core(ctx, ssl, buf, num, fd);
 
   return 0;
 }
@@ -772,7 +772,7 @@ func run(){
     if len(opensslPath) > 0 {
         opensslPath = strings.Replace(opensslPath, "usr","usr_host",1)
         if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
-            log.Printf(err)
+            log.Printf("%s",err.Error())
         }
 }
 
@@ -780,7 +780,7 @@ func run(){
     if len(boringLibsslPath) > 0 {
         boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host",1)
         if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
-            log.Printf(err)
+            log.Printf("%s",err.Error())
         }
     }
 
