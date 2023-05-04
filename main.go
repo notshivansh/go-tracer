@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
     "strings"
-
+    "strconv"
 	bcc "github.com/iovisor/gobpf/bcc"
 
     "github.com/segmentio/kafka-go"
@@ -26,6 +26,7 @@ import (
 	"go-tracer/internal/structs"
 	// "github.com/notshivansh/go-tracer/internal/utils"
 	// "github.com/notshivansh/go-tracer/internal/privileges"
+    "github.com/akto-api-security/gomiddleware"
 )
 
 import "C"
@@ -681,22 +682,20 @@ func replaceOpensslMacros(){
     opensslVersion := os.Getenv("OPENSSL_VERSION_AKTO")
     fixed := false
     if len(opensslVersion) > 0 {
-        split := strings.Split(opensslVersion,'.')
+        split := strings.Split(opensslVersion,".")
         if len(split) == 3 {
             if split[0] == '1' &&  ( split[1] == '0' || strings.HasPrefix(split[2],"0") ) {
-                source = strings.replace(source, "RBIO_NUM_OFFSET", "0x28")
+                source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x28")
                 fixed = true
             }
         }
     }
     if !fixed {
-        source = strings.replace(source, "RBIO_NUM_OFFSET", "0x30")
+        source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x30")
     }
 }
 
 func initKafka() (kafkaWriter *kafka.Writer) {
-    
-    var kafkaWriter *kafka.Writer
 
     kafka_url := os.Getenv("AKTO_KAFKA_BROKER_MAL")
 	log.Println("kafka_url", kafka_url)
@@ -770,9 +769,9 @@ func run(){
 	}
 
     opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
-    if len(libsslPath) > 0 {
+    if len(opensslPath) > 0 {
         opensslPath = strings.Replace(opensslPath, "usr","usr_host")
-        if err := bpfwrapper.AttachUprobes(libsslPath, -1, bpfModule, sslHooks); err != nil {
+        if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
             log.Printf(err)
         }
 }
