@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	// should be 30KB
-	maxBufferSize = 100 * 1024 // 100KB
+	maxBufferSize = 30 * 1024 // 30KB, same as the limit defined in C++ probe code.
 )
 
 type Tracker struct {

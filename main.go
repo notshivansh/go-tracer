@@ -15,6 +15,7 @@ import (
 	"log"
 	"syscall"
 	"time"
+    "strings"
 
 	bcc "github.com/iovisor/gobpf/bcc"
 
@@ -28,13 +29,6 @@ import (
 )
 
 import "C"
-
-// type EventType int32
-
-// const (
-// 	eventArg EventType = iota
-// 	eventRet
-// )
 
 const source string = `
 #include <bcc/proto.h>
@@ -361,10 +355,18 @@ int syscall__probe_ret_accept4(struct pt_regs* ctx) {
     return 0;
 }
 
-static u32 get_fd(void *ssl){
-    int32_t SSL_rbio_offset = 0x10;  // 0x10;
-    int32_t RBIO_num_offset = 0x28;  // 0x30 (openssl 1.1.1) or 0x28 (openssl 1.1.0)
+static u32 get_fd(void *ssl, bool isBoringSSL) {
+    int32_t SSL_rbio_offset;
+    int32_t RBIO_num_offset;
     
+    if(isBoringSSL){
+        SSL_rbio_offset = 0x18;
+        RBIO_num_offset = 0x18;
+    } else {
+        SSL_rbio_offset = 0x10;
+        RBIO_num_offset = RBIO_NUM_OFFSET;
+    }
+
     const void** rbio_ptr_addr = ssl + SSL_rbio_offset;
     const void* rbio_ptr = *rbio_ptr_addr;
     const int* rbio_num_addr = rbio_ptr + RBIO_num_offset;
@@ -381,12 +383,11 @@ static void set_conn_as_ssl(u32 tgid, u32 fd){
     conn_info->ssl = true;
 }
 
-int probe_entry_SSL_write(struct pt_regs *ctx, void *ssl, void *buf, int num) {
+void probe_entry_SSL_write_core(struct pt_regs *ctx, void *ssl, void *buf, int num){
   u64 id = bpf_get_current_pid_tgid();
   u32 tgid = id >> 32;
 
   char* bufc = (char*)PT_REGS_PARM2(ctx);
-  u32 fd = get_fd(ssl);
 
   struct data_args_t write_args = {};
   write_args.fd = fd;
@@ -395,7 +396,17 @@ int probe_entry_SSL_write(struct pt_regs *ctx, void *ssl, void *buf, int num) {
 
   // Mark connection as SSL right away, so encrypted traffic does not get traced.
   set_conn_as_ssl(tgid, write_args.fd);
+}
 
+int probe_entry_SSL_write(struct pt_regs *ctx, void *ssl, void *buf, int num) {
+    u32 fd = get_fd(ssl, false);
+    probe_entry_SSL_write_core(ctx, ssl, buf, num);
+  return 0;
+}
+
+int probe_entry_SSL_write_boring(struct pt_regs *ctx, void *ssl, void *buf, int num) {
+    u32 fd = get_fd(ssl, true);
+    probe_entry_SSL_write_core(ctx, ssl, buf, num);
   return 0;
 }
 
@@ -411,12 +422,11 @@ int probe_ret_SSL_write(struct pt_regs* ctx) {
   return 0;
 }
 
-int probe_entry_SSL_read(struct pt_regs *ctx, void *ssl, void *buf, int num) {
-  u64 id = bpf_get_current_pid_tgid();
+void probe_entry_SSL_read_core(struct pt_regs *ctx, void *ssl, void *buf, int num){
+    u64 id = bpf_get_current_pid_tgid();
   u32 tgid = id >> 32;
 
   char* bufc = (char*)PT_REGS_PARM2(ctx);
-  int32_t fd = get_fd(ssl);
 
   struct data_args_t read_args = {};
   read_args.fd = fd;
@@ -425,6 +435,18 @@ int probe_entry_SSL_read(struct pt_regs *ctx, void *ssl, void *buf, int num) {
 
   // Mark connection as SSL right away, so encrypted traffic does not get traced.
   set_conn_as_ssl(tgid, read_args.fd);
+}
+
+int probe_entry_SSL_read(struct pt_regs *ctx, void *ssl, void *buf, int num) {
+    int32_t fd = get_fd(ssl, false);
+    probe_entry_SSL_read_core(ctx, ssl, buf, num);
+
+  return 0;
+}
+
+int probe_entry_SSL_read_boring(struct pt_regs *ctx, void *ssl, void *buf, int num) {
+    int32_t fd = get_fd(ssl, true);
+    probe_entry_SSL_read_core(ctx, ssl, buf, num);
 
   return 0;
 }
@@ -525,27 +547,50 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-		// {
-		// 	FunctionToHook: "SSL_write_ex",
-		// 	HookName:       "probe_entry_SSL_write",
-		// 	Type:           bpfwrapper.EntryType,
-		// },
-		// {
-		// 	FunctionToHook: "SSL_write_ex",
-		// 	HookName:       "probe_ret_SSL_write",
-		// 	Type:           bpfwrapper.ReturnType,
-		// },
-		// {
-		// 	FunctionToHook: "SSL_read_ex",
-		// 	HookName:       "probe_entry_SSL_read",
-		// 	Type:           bpfwrapper.EntryType,
-		// },
-		// {
-		// 	FunctionToHook: "SSL_read_ex",
-		// 	HookName:       "probe_ret_SSL_read",
-		// 	Type:           bpfwrapper.ReturnType,
-		// },
-	}
+        {
+			FunctionToHook: "SSL_write_ex",
+			HookName:       "probe_entry_SSL_write",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_write_ex",
+			HookName:       "probe_ret_SSL_write",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_read_ex",
+			HookName:       "probe_entry_SSL_read",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_read_ex",
+			HookName:       "probe_ret_SSL_read",
+			Type:           bpfwrapper.ReturnType,
+		},
+    }
+
+    boringsslHooks = []bpfwrapper.Uprobe{
+		{
+			FunctionToHook: "SSL_write",
+			HookName:       "probe_entry_SSL_write_boring",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_write",
+			HookName:       "probe_ret_SSL_write",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_read",
+			HookName:       "probe_entry_SSL_read_boring",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_read",
+			HookName:       "probe_ret_SSL_read",
+			Type:           bpfwrapper.ReturnType,
+		},
+    }
 )
 
 func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
@@ -554,16 +599,13 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			return
 		}
 		var event structs.SocketOpenEvent
-
 		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
-			log.Printf("Failed to decode received data: %+v", err)
+			log.Printf("Failed to decode received data on socker open: %+v", err)
 			continue
 		}
 
         connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
-
-        // fmt.Printf("****************\nGot open event from client {ip: %v, port: %v}\n****************\n", event.Ip, event.Port)
 
         }
 }
@@ -575,7 +617,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 		}
 		var event structs.SocketCloseEvent
 		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
-			log.Printf("Failed to decode received data: %+v", err)
+			log.Printf("Failed to decode received data on socket close: %+v", err)
 			continue
 		}
 
@@ -586,7 +628,6 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 		}
 		tracker.AddCloseEvent(event)
 
-        // fmt.Println("##############\nGot close event from client\n##############")
 	}
 }
 
@@ -619,7 +660,6 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 		}
 
         bytesSent := (event.Attr.Bytes_sent>>32)>>16
-		// If there is at least single byte over the required minimum, thus we should copy it.
         
         eventAttributesLogicalSize := 36
 
@@ -637,12 +677,61 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 }
 
 
+func replaceOpensslMacros(){
+    opensslVersion := os.Getenv("OPENSSL_VERSION_AKTO")
+    fixed := false
+    if len(opensslVersion) > 0 {
+        split := strings.Split(opensslVersion,'.')
+        if len(split) == 3 {
+            if split[0] == '1' &&  ( split[1] == '0' || strings.HasPrefix(split[2],"0") ) {
+                source = strings.replace(source, "RBIO_NUM_OFFSET", "0x28")
+                fixed = true
+            }
+        }
+    }
+    if !fixed {
+        source = strings.replace(source, "RBIO_NUM_OFFSET", "0x30")
+    }
+}
+
+func initKafka() (kafkaWriter *kafka.Writer) {
+    
+    var kafkaWriter *kafka.Writer
+
+    kafka_url := os.Getenv("AKTO_KAFKA_BROKER_MAL")
+	log.Println("kafka_url", kafka_url)
+
+	if len(kafka_url) == 0 {
+		kafka_url = os.Getenv("AKTO_KAFKA_BROKER_URL")
+	}
+	log.Println("kafka_url", kafka_url)
+
+	kafka_batch_size, e := strconv.Atoi(os.Getenv("AKTO_TRAFFIC_BATCH_SIZE"))
+	if e != nil {
+		log.Printf("AKTO_TRAFFIC_BATCH_SIZE should be valid integer")
+		return
+	}
+
+	kafka_batch_time_secs, e := strconv.Atoi(os.Getenv("AKTO_TRAFFIC_BATCH_TIME_SECS"))
+	if e != nil {
+		log.Printf("AKTO_TRAFFIC_BATCH_TIME_SECS should be valid integer")
+		return
+	}
+	kafka_batch_time_secs_duration := time.Duration(kafka_batch_time_secs)
+
+	kafkaWriter = gomiddleware.GetKafkaWriter(kafka_url, "akto.api.logs", kafka_batch_size, kafka_batch_time_secs_duration*time.Second)
+    
+    return
+}
+
 func main() {
 	run()
 }
 
 func run(){
 	
+    replaceOpensslMacros()
+
 	bpfModule := bcc.NewModule(source, []string{})
     if bpfModule == nil {
 		log.Panic("bpf is nil")
@@ -651,28 +740,7 @@ func run(){
 
     var kafkaWriter *kafka.Writer
 
-    // kafka_url := os.Getenv("AKTO_KAFKA_BROKER_MAL")
-	// log.Println("kafka_url", kafka_url)
-
-	// if len(kafka_url) == 0 {
-	// 	kafka_url = os.Getenv("AKTO_KAFKA_BROKER_URL")
-	// }
-	// log.Println("kafka_url", kafka_url)
-
-	// kafka_batch_size, e := strconv.Atoi(os.Getenv("AKTO_TRAFFIC_BATCH_SIZE"))
-	// if e != nil {
-	// 	log.Printf("AKTO_TRAFFIC_BATCH_SIZE should be valid integer")
-	// 	return
-	// }
-
-	// kafka_batch_time_secs, e := strconv.Atoi(os.Getenv("AKTO_TRAFFIC_BATCH_TIME_SECS"))
-	// if e != nil {
-	// 	log.Printf("AKTO_TRAFFIC_BATCH_TIME_SECS should be valid integer")
-	// 	return
-	// }
-	// kafka_batch_time_secs_duration := time.Duration(kafka_batch_time_secs)
-
-	// kafkaWriter = gomiddleware.GetKafkaWriter(kafka_url, "akto.api.logs", kafka_batch_size, kafka_batch_time_secs_duration*time.Second)
+    kafkaWriter = initKafka()
 
     connectionFactory := connections.NewFactory(time.Minute)
 	go func() {
@@ -701,9 +769,22 @@ func run(){
 		log.Panic(err)
 	}
 
-    if err := bpfwrapper.AttachUprobes("/usr/lib64/ssl/libssl.so.10", -1, bpfModule, sslHooks); err != nil {
-		log.Panic(err)
-	}
+    opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
+    if len(libsslPath) > 0 {
+        opensslPath = strings.Replace(opensslPath, "usr","usr_host")
+        if err := bpfwrapper.AttachUprobes(libsslPath, -1, bpfModule, sslHooks); err != nil {
+            log.Printf(err)
+        }
+}
+
+    boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
+    if len(boringLibsslPath) > 0 {
+        boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host")
+        if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
+            log.Printf(err)
+        }
+    }
+
 
     sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
