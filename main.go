@@ -31,7 +31,7 @@ import (
 
 import "C"
 
-const source string = `
+var source string = `
 #include <bcc/proto.h>
 #include <linux/in6.h>
 #include <linux/net.h>
@@ -480,6 +480,18 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
+        {
+			FunctionToHook: "accept4",
+			HookName:       "syscall__probe_entry_accept",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "accept4",
+			HookName:       "syscall__probe_ret_accept",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
 	}
 
 	level2hooks = []bpfwrapper.Kprobe{
@@ -495,6 +507,30 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
+        {
+			FunctionToHook: "recv",
+			HookName:       "syscall__probe_entry_recvfrom",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "recv",
+			HookName:       "syscall__probe_ret_recvfrom",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "read",
+			HookName:       "syscall__probe_entry_recvfrom",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "read",
+			HookName:       "syscall__probe_ret_recvfrom",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
 	}
 
 	level3hooks = []bpfwrapper.Kprobe{
@@ -506,6 +542,30 @@ var (
 		},
 		{
 			FunctionToHook: "sendto",
+			HookName:       "syscall__probe_ret_sendto",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "send",
+			HookName:       "syscall__probe_entry_sendto",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "send",
+			HookName:       "syscall__probe_ret_sendto",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "write",
+			HookName:       "syscall__probe_entry_sendto",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "write",
 			HookName:       "syscall__probe_ret_sendto",
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
@@ -783,7 +843,6 @@ func run(){
             log.Printf("%s",err.Error())
         }
     }
-
 
     sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
