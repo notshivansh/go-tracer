@@ -684,14 +684,14 @@ func replaceOpensslMacros(){
     if len(opensslVersion) > 0 {
         split := strings.Split(opensslVersion,".")
         if len(split) == 3 {
-            if split[0] == '1' &&  ( split[1] == '0' || strings.HasPrefix(split[2],"0") ) {
-                source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x28")
+            if split[0] == "1" &&  ( split[1] == "0" || strings.HasPrefix(split[2],"0") ) {
+                source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x28",1)
                 fixed = true
             }
         }
     }
     if !fixed {
-        source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x30")
+        source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x30",1)
     }
 }
 
@@ -770,7 +770,7 @@ func run(){
 
     opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
     if len(opensslPath) > 0 {
-        opensslPath = strings.Replace(opensslPath, "usr","usr_host")
+        opensslPath = strings.Replace(opensslPath, "usr","usr_host",1)
         if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
             log.Printf(err)
         }
@@ -778,7 +778,7 @@ func run(){
 
     boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
     if len(boringLibsslPath) > 0 {
-        boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host")
+        boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host",1)
         if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
             log.Printf(err)
         }
