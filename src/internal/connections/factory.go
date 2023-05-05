@@ -34,7 +34,10 @@ func (factory *Factory) HandleReadyConnections(kafkaWriter *kafka.Writer) {
 			if len(tracker.sentBuf) == 0 && len(tracker.recvBuf) == 0 {
 				continue
 			}
-			tryReadFromBD(tracker, kafkaWriter)
+			if kafkaWriter != nil {
+				tryReadFromBD(tracker, kafkaWriter)
+			}
+			
 		}
 	}
 	factory.mutex.Lock()

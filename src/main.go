@@ -23,6 +23,7 @@ import (
 	"go-tracer/internal/bpfwrapper"
 	"go-tracer/internal/connections"
 	"go-tracer/internal/structs"
+    "go-tracer/internal/utils"
     "github.com/akto-api-security/gomiddleware"
 )
 
@@ -693,13 +694,6 @@ var (
 	eventAttributesSize = int(unsafe.Sizeof(structs.SocketDataEventAttr{}))
 )
 
-func Abs(x int64) int64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func socketDataEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
 	for data := range inputChan {
 		if data == nil {
@@ -723,14 +717,14 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
         eventAttributesLogicalSize := 36
 
 		if len(data) > eventAttributesLogicalSize {
-			copy(event.Msg[:], data[eventAttributesLogicalSize:eventAttributesLogicalSize+int(Abs(bytesSent))])
+			copy(event.Msg[:], data[eventAttributesLogicalSize:eventAttributesLogicalSize+int(utils.Abs(bytesSent))])
 		}
 
         connId := event.Attr.ConnId
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         // fmt.Println("<------------")
-        // fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:Abs(bytesSent)])
+        // fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:utils.Abs(bytesSent)])
         // fmt.Println("------------>")
 	}
 }

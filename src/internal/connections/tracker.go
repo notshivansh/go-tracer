@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 	"go-tracer/internal/structs"
+	"go-tracer/utils"
 )
 
 const (
@@ -42,13 +43,6 @@ func (conn *Tracker) IsComplete() bool {
 	return conn.closeTimestamp != 0
 }
 
-func Abs(x int64) int64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
@@ -56,11 +50,11 @@ func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
 	bytesSent := (event.Attr.Bytes_sent>>32)>>16
 
 	if bytesSent > 0 {
-		conn.sentBuf = append(conn.sentBuf, event.Msg[:Abs(bytesSent)]...)
-		conn.sentBytes += uint64(Abs(bytesSent))
+		conn.sentBuf = append(conn.sentBuf, event.Msg[:utils.Abs(bytesSent)]...)
+		conn.sentBytes += uint64(utils.Abs(bytesSent))
 	} else {
-		conn.recvBuf = append(conn.recvBuf, event.Msg[:Abs(bytesSent)]...)
-		conn.recvBytes += uint64(Abs(bytesSent))
+		conn.recvBuf = append(conn.recvBuf, event.Msg[:utils.Abs(bytesSent)]...)
+		conn.recvBytes += uint64(utils.Abs(bytesSent))
 	}
 }
 
