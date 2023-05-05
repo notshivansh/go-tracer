@@ -10,4 +10,4 @@ RUN go get
 RUN go mod download
 RUN go build -o go-tracer
 
-CMD "/go-tracer"
+CMD "./go-tracer"
