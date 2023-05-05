@@ -21,3 +21,4 @@ services:
               target: /usr_host
               read_only: true
         network_mode: host
+        env_file: ./ebpf.env

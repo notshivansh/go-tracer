@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# run: "source initial_script.sh" to export the variables to the current shell.
-
 command_present() {
   type "$1" >/dev/null 2>&1
 }
@@ -9,7 +7,7 @@ command_present() {
 if command_present openssl; then
   openssl_version_output=$(openssl version)
   openssl_version_array=($openssl_version_output)
-  export OPENSSL_VERSION_AKTO=${openssl_version_array[1]}
+  echo OPENSSL_VERSION_AKTO=${openssl_version_array[1]} >> ebpf.env
 fi
 
 ssl_libraries=("openssl" "bssl")
@@ -29,7 +27,7 @@ for library in "${ssl_libraries[@]}"; do
     for word in "${ldd_array[@]}"; do
       if [[ $word == *libssl* ]]; then
         libssl_path=$(whereis $word | cut -d' ' -f2)
-        export ${library^^}_PATH_AKTO=$libssl_path
+        echo ${library^^}_PATH_AKTO=$libssl_path >> ebpf.env
         break
       fi
     done
