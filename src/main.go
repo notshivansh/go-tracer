@@ -17,6 +17,9 @@ import (
 	"time"
     "strings"
     "strconv"
+    
+    // need an unreleased version of the gobpf library, using from a specific branch, reasoning in the thread below. 
+    // https://stackoverflow.com/questions/73714654/not-enough-arguments-in-call-to-c2func-bcc-func-load
 	"github.com/iovisor/gobpf/bcc"
 
     "github.com/segmentio/kafka-go"
