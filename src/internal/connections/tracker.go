@@ -68,16 +68,16 @@ func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 
-	if conn.openTimestamp != 0 && conn.openTimestamp != event.Conn_start_ns {
-		log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.Conn_start_ns)
+	if conn.openTimestamp != 0 && conn.openTimestamp != event.ConnId.Conn_start_ns {
+		log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.ConnId.Conn_start_ns)
 	}
-	conn.openTimestamp = event.Conn_start_ns
+	conn.openTimestamp = event.ConnId.Conn_start_ns
 }
 
 func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 	
-	conn.closeTimestamp = event.Conn_start_ns + uint64(time.Now().Unix())
+	conn.closeTimestamp = uint64(time.Now().Unix())
 }
 
