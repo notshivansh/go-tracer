@@ -1,8 +1,6 @@
 
 package structs
 
-import "unsafe"
-
 type ConnID struct {
 	Id             uint64
 	Fd             uint32
