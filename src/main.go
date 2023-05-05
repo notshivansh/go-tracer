@@ -710,7 +710,7 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
-        // this value was observed.
+        // the first 16 bits are relevant, but since we get more data, we use bitwise operation to extract thee first 16 bits.
         bytesSent := (event.Attr.Bytes_sent>>32)>>16
 
         // The 4 bytes are being lost in padding, thus, not taking them into consideration.

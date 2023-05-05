@@ -1,0 +1,23 @@
+version: '3.3'
+services:
+    run:
+        image: aktosecurity/ebpf
+        privileged: true
+        volumes:
+            - type: volume
+              source: /lib/modules
+              target: /lib/modules
+              read_only: true
+            - type: volume
+              source: /usr/src
+              target: /usr/src
+              read_only: true
+            - type: volume
+              source: /sys
+              target: /sys
+              read_only: true
+            - type: volume
+              source: /usr
+              target: /usr_host
+              read_only: true
+        network_mode: host

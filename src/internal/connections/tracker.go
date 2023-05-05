@@ -37,10 +37,18 @@ func NewTracker(connID structs.ConnID) *Tracker {
 	}
 }
 
+// We process a tracker after atleast 30 seconds, and delete it after 60 seconds of connection close.
+
 func (conn *Tracker) IsComplete() bool {
 	conn.mutex.RLock()
 	defer conn.mutex.RUnlock()
-	return conn.closeTimestamp != 0
+	return uint64(time.Now().UnixNano())-conn.closeTimestamp > uint64(duration.Nanoseconds()/2)
+}
+
+func (conn *Tracker) IsInactive(duration time.Duration) bool {
+	conn.mutex.RLock()
+	defer conn.mutex.RUnlock()
+	return uint64(time.Now().UnixNano())-conn.closeTimestamp > uint64(duration.Nanoseconds())
 }
 
 func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
@@ -72,6 +80,6 @@ func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 	
-	conn.closeTimestamp = uint64(time.Now().Unix())
+	conn.closeTimestamp = uint64(time.Now().UnixNano())
 }
 

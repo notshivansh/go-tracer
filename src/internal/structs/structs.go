@@ -24,6 +24,8 @@ int bytes_sent;
 char msg[MAX_MSG_SIZE];
 */
 
+// MAX_MSG_SIZE is defined in C++ ebpf code.
+
 type SocketDataEvent struct {
 	Attr SocketDataEventAttr
 	Msg            [30720]byte
