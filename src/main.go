@@ -17,15 +17,12 @@ import (
 	"time"
     "strings"
     "strconv"
-	bcc "github.com/iovisor/gobpf/bcc"
+	"github.com/iovisor/gobpf/bcc"
 
     "github.com/segmentio/kafka-go"
 	"go-tracer/internal/bpfwrapper"
 	"go-tracer/internal/connections"
-	// "github.com/notshivansh/go-tracer/internal/settings"
 	"go-tracer/internal/structs"
-	// "github.com/notshivansh/go-tracer/internal/utils"
-	// "github.com/notshivansh/go-tracer/internal/privileges"
     "github.com/akto-api-security/gomiddleware"
 )
 
@@ -78,17 +75,16 @@ struct socket_close_event_t {
     u64 conn_start_ns;
     unsigned short port;
     u32 ip;
-
     u64 socket_close_ns;
 };
 
 struct socket_data_event_t {
-    	u64 id;
-    	u32 fd;
-    	u64 conn_start_ns;
-    	unsigned short port;
-    	u32 ip;
-        int bytes_sent;
+    u64 id;
+    u32 fd;
+    u64 conn_start_ns;
+    unsigned short port;
+    u32 ip;
+    int bytes_sent;
     char msg[MAX_MSG_SIZE];
 };
 
@@ -665,7 +661,7 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
-        connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
+        connId := event.ConnId
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
         }
@@ -682,7 +678,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 			continue
 		}
 
-        connId := structs.ConnID{event.Id, event.Fd, event.Conn_start_ns, event.Port, event.Ip}
+        connId := event.ConnId
 		tracker := connectionFactory.Get(connId)
 		if tracker == nil {
 			continue
@@ -693,7 +689,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 }
 
 var (
-    // this also includes size lost in padding.
+    // this also includes space lost in padding.
 	eventAttributesSize = int(unsafe.Sizeof(structs.SocketDataEventAttr{}))
 )
 
@@ -720,15 +716,17 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
+        // this value was observed.
         bytesSent := (event.Attr.Bytes_sent>>32)>>16
-        
+
+        // The 4 bytes are being lost in padding, thus, not taking them into consideration.
         eventAttributesLogicalSize := 36
 
 		if len(data) > eventAttributesLogicalSize {
 			copy(event.Msg[:], data[eventAttributesLogicalSize:eventAttributesLogicalSize+int(Abs(bytesSent))])
 		}
 
-        connId := structs.ConnID{event.Attr.Id, event.Attr.Fd, event.Attr.Conn_start_ns, event.Attr.Port, event.Attr.Ip}
+        connId := event.Attr.ConnId
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
         // fmt.Println("<------------")
@@ -834,7 +832,7 @@ func run(){
         if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
             log.Printf("%s",err.Error())
         }
-}
+    }
 
     boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
     if len(boringLibsslPath) > 0 {

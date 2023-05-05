@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
-	// "context"
+	"context"
 	"encoding/json"
 	"fmt"
 	// "github.com/akto-api-security/mirroring-api-logging/db"
@@ -13,8 +13,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	// "os"
-	// "strconv"
 	"time"
 
 	// "github.com/google/gopacket"
@@ -22,7 +20,7 @@ import (
 	// "github.com/google/gopacket/pcap"
 	// "github.com/google/gopacket/tcpassembly"
 
-	// "github.com/akto-api-security/gomiddleware"
+	"github.com/akto-api-security/gomiddleware"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -56,7 +54,7 @@ func tryReadFromBD(tracker *Tracker, kafkaWriter *kafka.Writer) {
 
 	reader = bufio.NewReader(bytes.NewReader(tracker.sentBuf))
 	i = 0
-	log.Println("len(req)", len(requests))
+	// log.Println("len(req)", len(requests))
 	for {
 		if len(requests) < i+1 {
 			break
@@ -131,16 +129,16 @@ func tryReadFromBD(tracker *Tracker, kafkaWriter *kafka.Writer) {
 			"source":          "EBPF",
 		}
 
-		// out, _ := json.Marshal(value)
-		// ctx := context.Background()
+		out, _ := json.Marshal(value)
+		ctx := context.Background()
 
 		// calculating the size of outgoing bytes and requests (1) and saving it in outgoingCounterMap
 		// outgoingBytes := len(tracker.recvBuf) + len(tracker.sentBuf)
 		// hostString := reqHeader["host"]
 		// fmt.Printf("value: %v",value)
-		for k, v := range value {
-			fmt.Println(k, ":", v)
-		}
+		// for k, v := range value {
+		// 	fmt.Println(k, ":", v)
+		// }
 		
 		// if utils.CheckIfIpHost(hostString) {
 		// 	hostString = "ip-host"
@@ -159,7 +157,7 @@ func tryReadFromBD(tracker *Tracker, kafkaWriter *kafka.Writer) {
 		// 	log.Println("req-resp.String()", string(out))
 		// }
 
-		// go gomiddleware.Produce(kafkaWriter, ctx, string(out))
+		go gomiddleware.Produce(kafkaWriter, ctx, string(out))
 
 		i++
 	}
