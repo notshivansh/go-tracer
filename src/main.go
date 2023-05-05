@@ -793,7 +793,7 @@ func run(){
 
     kafkaWriter = initKafka()
 
-    connectionFactory := connections.NewFactory(time.Minute, time.Seconds*30)
+    connectionFactory := connections.NewFactory(time.Minute, time.Minute/2)
 	go func() {
 		for {
 			connectionFactory.HandleReadyConnections(kafkaWriter)
