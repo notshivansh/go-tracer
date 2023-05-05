@@ -4,21 +4,9 @@ services:
         image: aktosecurity/ebpf
         privileged: true
         volumes:
-            - type: volume
-              source: /lib/modules
-              target: /lib/modules
-              read_only: true
-            - type: volume
-              source: /usr/src
-              target: /usr/src
-              read_only: true
-            - type: volume
-              source: /sys
-              target: /sys
-              read_only: true
-            - type: volume
-              source: /usr
-              target: /usr_host
-              read_only: true
+            - /lib/modules:/lib/modules:ro
+            - /usr/src:/usr/src:ro
+            - /sys:/sys:ro
+            - /usr:/usr_host:ro
         network_mode: host
         env_file: ./ebpf.env
