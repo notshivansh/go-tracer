@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 	"go-tracer/internal/structs"
-	"go-tracer/utils"
+	"go-tracer/internal/utils"
 )
 
 const (
