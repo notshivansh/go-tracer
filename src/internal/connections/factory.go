@@ -13,15 +13,17 @@ import (
 type Factory struct {
 	connections         map[structs.ConnID]*Tracker
 	inactivityThreshold time.Duration
+	completeThreshold   time.Duration
 	mutex               *sync.RWMutex
 }
 
 // NewFactory creates a new instance of the factory.
-func NewFactory(inactivityThreshold time.Duration) *Factory {
+func NewFactory(inactivityThreshold time.Duration, completeThreshold time.Duration) *Factory {
 	return &Factory{
 		connections:         make(map[structs.ConnID]*Tracker),
 		mutex:               &sync.RWMutex{},
 		inactivityThreshold: inactivityThreshold,
+		completeThreshold:   completeThreshold,
 	}
 }
 
@@ -29,7 +31,7 @@ func (factory *Factory) HandleReadyConnections(kafkaWriter *kafka.Writer) {
 	trackersToDelete := make(map[structs.ConnID]struct{})
 
 	for connID, tracker := range factory.connections {
-		if tracker.IsComplete() {
+		if tracker.IsComplete(factory.inactivityThreshold) {
 			trackersToDelete[connID] = struct{}{}
 			if len(tracker.sentBuf) == 0 && len(tracker.recvBuf) == 0 {
 				continue
