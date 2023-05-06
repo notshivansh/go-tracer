@@ -21,7 +21,7 @@ Clues till now:
 4. Also, alpine uses "musl c" and not gcc as its standard c library.
 
 Couldn't figure out what alpine:edge has and is needed but missing here. I was in the process of fixing this, since alpine:edge is a beta build. Though, this is not an issue right now, but might be one in the future, since alpine:edge is a beta build and might change over time.
-If this does become a problem, a really simple fix would be to change the base image to some other os (ubuntu) and use  multistage builds in dockerfile to only ship the go built binary (will reduce the size very much, also the only reason why using alpine in the first place). To implement multistage builds: https://faun.pub/the-martial-arts-of-writing-go-dockerfile-9dcffd010619
+If this does become a problem or a problem not worth solving, a really simple fix would be to change the base image to some other os (ubuntu) and use  multistage builds in dockerfile to only ship the go built binary (will reduce the size very much, also the only reason why using alpine in the first place). To implement multistage builds: https://faun.pub/the-martial-arts-of-writing-go-dockerfile-9dcffd010619
 
 The code taken from mirror-api-logging is in parser.go (tryReadFromBD() function has been taken as is with some modification to the arguments) and main.go (initKafka() function).
 
