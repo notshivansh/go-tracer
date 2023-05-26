@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.18
 
 USER root
 RUN apk add bcc-tools bcc-dev bcc-doc git go linux-headers
