@@ -318,11 +318,12 @@ int syscall__probe_ret_close(struct pt_regs* ctx) {
 int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec* iov, int iovlen){
     u64 id = bpf_get_current_pid_tgid();
 
+    bpf_trace_printk("write enter 1");
     struct data_args_t write_args = {};
     write_args.fd = fd;
     write_args.iov = iov;
     write_args.iovlen = iovlen;
-    bpf_trace_printk("write enter");
+    bpf_trace_printk("write enter 2");
     active_sendto_args_map.update(&id, &write_args);
   
     return 0;
@@ -331,11 +332,12 @@ int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec*
 int syscall__probe_ret_writev(struct pt_regs* ctx) {
     u64 id = bpf_get_current_pid_tgid();
   
+    bpf_trace_printk("write exit 1");
     struct data_args_t* write_args = active_sendto_args_map.lookup(&id);
     if (write_args != NULL) {
       process_syscall_data_vecs(ctx, write_args, id, true);
     }
-    bpf_trace_printk("write exit");
+    bpf_trace_printk("write exit 2");
     active_sendto_args_map.delete(&id);
     return 0;
   }
@@ -343,12 +345,12 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
   int syscall__probe_entry_readv(struct pt_regs* ctx, int fd, struct iovec* iov, int iovlen) {
     u64 id = bpf_get_current_pid_tgid();
   
-    // Stash arguments.
+    bpf_trace_printk("read enter 1");
     struct data_args_t read_args = {};
     read_args.fd = fd;
     read_args.iov = iov;
     read_args.iovlen = iovlen;
-    bpf_trace_printk("read enter");
+    bpf_trace_printk("read enter 2");
     active_recvfrom_args_map.update(&id, &read_args);
   
     return 0;
@@ -357,11 +359,12 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
   int syscall__probe_ret_readv(struct pt_regs* ctx) {
     u64 id = bpf_get_current_pid_tgid();
   
+    bpf_trace_printk("read exit 1");
     struct data_args_t* read_args = active_recvfrom_args_map.lookup(&id);
     if (read_args != NULL) {
       process_syscall_data_vecs(ctx, read_args, id, false);
     }
-    bpf_trace_printk("read exit");
+    bpf_trace_printk("read exit 2");
     active_recvfrom_args_map.delete(&id);
     return 0;
   }
