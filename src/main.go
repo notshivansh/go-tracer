@@ -614,6 +614,12 @@ var (
 		},
         {
 			FunctionToHook: "readv",
+			HookName:       "syscall__probe_entry_readv",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "readv",
 			HookName:       "syscall__probe_ret_readv",
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
@@ -655,6 +661,12 @@ var (
 			FunctionToHook: "write",
 			HookName:       "syscall__probe_ret_sendto",
 			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "writev",
+			HookName:       "syscall__probe_entry_writev",
+			Type:           bpfwrapper.EntryType,
 			IsSyscall:      true,
 		},
         {
