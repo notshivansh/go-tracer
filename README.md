@@ -12,7 +12,7 @@ Notes:
 
 "iov" releated headers are not added 
 
-The current working image is created using alpine:3.18, and works smoothly. 
+The current working image is created using alpine:3.18, and works smoothly.
 To implement multistage builds: https://faun.pub/the-martial-arts-of-writing-go-dockerfile-9dcffd010619
 
 The code taken from mirror-api-logging is in parser.go (tryReadFromBD() function has been taken as is with some modification to the arguments) and main.go (initKafka() function).

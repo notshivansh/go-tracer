@@ -41,6 +41,7 @@ var source string = `
 
 #define socklen_t size_t
 #define MAX_MSG_SIZE 30720
+#define LOOP_LIMIT 42
 
 struct conn_info_t {
     u64 id;
@@ -58,6 +59,9 @@ struct accept_args_t {
 struct data_args_t {
     u32 fd;
     const char* buf;
+    const struct iovec* iov;
+    int iovlen;
+    int buf_size;
 };
 
 struct close_args_t {
@@ -181,8 +185,31 @@ static __inline void process_syscall_close(struct pt_regs* ret, const struct clo
     conn_info_map.delete(&tgid_fd);    
 }
 
+static __inline void process_syscall_data_vecs(struct pt_regs* ret, const struct data_args_t* args, u64 id, bool is_send){
+    int bytes_sent=0;
+    int total_size = PT_REGS_RC(ret);
+    struct iovec* iov = args->iov;
+    for (int i = 0; i < LOOP_LIMIT && i < args->iovlen && bytes_sent < total_size ; ++i) {
+        struct iovec iov_cpy;
+        bpf_probe_read(&iov_cpy, sizeof(iov_cpy), &iov[i]);
+
+        const int bytes_remaining = total_size - bytes_sent;
+        const size_t iov_size = min_size_t(iov_cpy.iov_len, bytes_remaining);
+        
+        args.buf = iov_cpy.iov_base;
+        args.buf_size = iov_size;
+        process_syscall_data(ctx, args, id, is_send, false);
+        bytes_sent += iov_size;
+        
+      }
+}
+
 static __inline void process_syscall_data(struct pt_regs* ret, const struct data_args_t* args, u64 id, bool is_send, bool ssl) {
     int bytes_exchanged = PT_REGS_RC(ret);
+
+    if(args->iovlen > 0 && args->buf_size > 0){
+        bytes_exchanged = args->buf_size;
+    }
 
     if (bytes_exchanged <= 0) {
         return;
@@ -287,6 +314,55 @@ int syscall__probe_ret_close(struct pt_regs* ctx) {
     active_close_args_map.delete(&id);
     return 0;
 }
+
+int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec* iov, int iovlen){
+    u64 id = bpf_get_current_pid_tgid();
+
+    struct data_args_t write_args = {};
+    write_args.fd = fd;
+    write_args.iov = iov;
+    write_args.iovlen = iovlen;
+    active_write_args_map.update(&id, &write_args);
+  
+    return 0;
+}
+
+int syscall__probe_ret_writev(struct pt_regs* ctx) {
+    u64 id = bpf_get_current_pid_tgid();
+  
+    struct data_args_t* write_args = active_write_args_map.lookup(&id);
+    if (write_args != NULL) {
+      process_syscall_data_vecs(ctx, write_args, id, true);
+    }
+  
+    active_write_args_map.delete(&id);
+    return 0;
+  }
+
+  int syscall__probe_entry_readv(struct pt_regs* ctx, int fd, struct iovec* iov, int iovlen) {
+    u64 id = bpf_get_current_pid_tgid();
+  
+    // Stash arguments.
+    struct data_args_t read_args = {};
+    read_args.fd = fd;
+    read_args.iov = iov;
+    read_args.iovlen = iovlen;
+    active_read_args_map.update(&id, &read_args);
+  
+    return 0;
+  }
+  
+  int syscall__probe_ret_readv(struct pt_regs* ctx) {
+    u64 id = bpf_get_current_pid_tgid();
+  
+    struct data_args_t* read_args = active_read_args_map.lookup(&id);
+    if (read_args != NULL) {
+      process_syscall_data_vecs(ctx, read_args, id, false);
+    }
+  
+    active_read_args_map.delete(&id);
+    return 0;
+  }
 
 int syscall__probe_entry_recvfrom(struct pt_regs* ctx, int fd, char* buf, size_t count) {
     u64 id = bpf_get_current_pid_tgid();
@@ -531,6 +607,12 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
+        {
+			FunctionToHook: "readv",
+			HookName:       "syscall__probe_ret_readv",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
 	}
 
 	level3hooks = []bpfwrapper.Kprobe{
@@ -567,6 +649,12 @@ var (
 		{
 			FunctionToHook: "write",
 			HookName:       "syscall__probe_ret_sendto",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "writev",
+			HookName:       "syscall__probe_ret_writev",
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
