@@ -322,6 +322,7 @@ int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec*
     write_args.fd = fd;
     write_args.iov = iov;
     write_args.iovlen = iovlen;
+    bpf_trace_printk("write enter");
     active_sendto_args_map.update(&id, &write_args);
   
     return 0;
@@ -334,7 +335,7 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
     if (write_args != NULL) {
       process_syscall_data_vecs(ctx, write_args, id, true);
     }
-  
+    bpf_trace_printk("write exit");
     active_sendto_args_map.delete(&id);
     return 0;
   }
@@ -347,6 +348,7 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
     read_args.fd = fd;
     read_args.iov = iov;
     read_args.iovlen = iovlen;
+    bpf_trace_printk("read enter");
     active_recvfrom_args_map.update(&id, &read_args);
   
     return 0;
@@ -359,7 +361,7 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
     if (read_args != NULL) {
       process_syscall_data_vecs(ctx, read_args, id, false);
     }
-  
+    bpf_trace_printk("read exit");
     active_recvfrom_args_map.delete(&id);
     return 0;
   }
