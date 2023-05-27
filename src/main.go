@@ -185,7 +185,7 @@ static __inline void process_syscall_close(struct pt_regs* ret, const struct clo
     conn_info_map.delete(&tgid_fd);    
 }
 
-static __inline void process_syscall_data_vecs(struct pt_regs* ret, const struct data_args_t* args, u64 id, bool is_send){
+static __inline void process_syscall_data_vecs(struct pt_regs* ret, struct data_args_t* args, u64 id, bool is_send){
     int bytes_sent=0;
     int total_size = PT_REGS_RC(ret);
     struct iovec* iov = args->iov;
@@ -194,11 +194,11 @@ static __inline void process_syscall_data_vecs(struct pt_regs* ret, const struct
         bpf_probe_read(&iov_cpy, sizeof(iov_cpy), &iov[i]);
 
         const int bytes_remaining = total_size - bytes_sent;
-        const size_t iov_size = min_size_t(iov_cpy.iov_len, bytes_remaining);
+        const size_t iov_size = iov_cpy.iov_len > bytes_remaining ? iov_cpy.iov_len : bytes_remaining ;
         
-        args.buf = iov_cpy.iov_base;
-        args.buf_size = iov_size;
-        process_syscall_data(ctx, args, id, is_send, false);
+        args->buf = iov_cpy.iov_base;
+        args->buf_size = iov_size;
+        process_syscall_data(ret, args, id, is_send, false);
         bytes_sent += iov_size;
         
       }
