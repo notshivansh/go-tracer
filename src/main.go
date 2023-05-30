@@ -135,7 +135,7 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
         return;
     }
 
-    if ( addr->sa->sa_family != AF_INET || addr->sa->sa_family != AF_INET6 ) {
+    if ( addr->sa.sa_family != AF_INET || addr->sa.sa_family != AF_INET6 ) {
         return;
     }
 
@@ -144,7 +144,7 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
     conn_info.fd = ret_fd;
     conn_info.conn_start_ns = bpf_ktime_get_ns();
 
-    if ( addr.sa.sa_family == AF_INET ){
+    if ( addr->sa.sa_family == AF_INET ){
         struct sockaddr_in* sock_in = (struct sockaddr_in *)addr;
         conn_info.port = sock_in->sin_port;
         struct in_addr *in_addr_ptr = &(sock_in->sin_addr);
@@ -153,7 +153,7 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
         struct sockaddr_in6* sock_in = (struct sockaddr_in6 *)addr;
         conn_info.port = sock_in->sin6_port;
         struct in6_addr *in_addr_ptr = &(sock_in->sin6_addr);
-        conn_info.ip = in_addr_ptr->s6_addr32;
+        conn_info.ip = in_addr_ptr->s6_addr16;
     }
 
     conn_info.ssl = false;
