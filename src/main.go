@@ -153,7 +153,7 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
         struct sockaddr_in6* sock_in = (struct sockaddr_in6 *)addr;
         conn_info.port = sock_in->sin6_port;
         struct in6_addr *in_addr_ptr = &(sock_in->sin6_addr);
-        conn_info.ip = in_addr_ptr->s6_addr32[3];
+        conn_info.ip = (in_addr_ptr->s6_addr32)[3];
     }
 
     conn_info.ssl = false;
