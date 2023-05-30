@@ -135,7 +135,7 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
         return;
     }
 
-    if ( addr->sa.sa_family != AF_INET || addr->sa.sa_family != AF_INET6 ) {
+    if ( addr->sa.sa_family != AF_INET && addr->sa.sa_family != AF_INET6 ) {
         return;
     }
 
