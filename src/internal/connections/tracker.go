@@ -48,7 +48,7 @@ func (conn *Tracker) IsComplete(duration time.Duration) bool {
 func (conn *Tracker) IsInactive(duration time.Duration) bool {
 	conn.mutex.RLock()
 	defer conn.mutex.RUnlock()
-	return uint64(time.Now().UnixNano())-conn.closeTimestamp > uint64(duration.Nanoseconds())
+	return uint64(time.Now().UnixNano())-conn.openTimestamp > uint64(duration.Nanoseconds())
 }
 
 func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
