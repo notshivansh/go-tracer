@@ -52,6 +52,12 @@ struct conn_info_t {
     bool ssl;
 };
 
+union sockaddr_t {
+    struct sockaddr sa;
+    struct sockaddr_in in4;
+    struct sockaddr_in6 in6;
+};
+
 struct accept_args_t {
     struct sockaddr* addr;
 };
@@ -121,21 +127,35 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
     if (ret_fd < 0) {
         return;
     }
+    union sockaddr_t addr;
 
-    if (args->addr->sa_family != AF_INET) {
+    if(agrs->addr != NULL){
+        addr = *((union sockaddr_t*)args->addr);
+    } else {
         return;
     }
 
-    struct sockaddr_in* sock_in = (struct sockaddr_in *)args->addr;
+    if ( addr.sa.sa_family != AF_INET || addr.sa.sa_family != AF_INET6 ) {
+        return;
+    }
 
     struct conn_info_t conn_info = {};
     conn_info.id = id;
     conn_info.fd = ret_fd;
     conn_info.conn_start_ns = bpf_ktime_get_ns();
 
-    conn_info.port = sock_in->sin_port;
-    struct in_addr *in_addr_ptr = &(sock_in->sin_addr);
-    conn_info.ip = in_addr_ptr->s_addr;
+    if ( addr.sa.sa_family == AF_INET ){
+        struct sockaddr_in* sock_in = (struct sockaddr_in *)addr;
+        conn_info.port = sock_in->sin_port;
+        struct in_addr *in_addr_ptr = &(sock_in->sin_addr);
+        conn_info.ip = in_addr_ptr->s_addr;
+    } else {
+        struct sockaddr_in6* sock_in = (struct sockaddr_in6 *)addr;
+        conn_info.port = sock_in->sin6_port;
+        struct in6_addr *in_addr_ptr = &(sock_in->sin6_addr);
+        conn_info.ip = in_addr_ptr->s6_addr32;
+    }
+
     conn_info.ssl = false;
 
 
