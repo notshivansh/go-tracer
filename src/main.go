@@ -17,6 +17,7 @@ import (
 	"time"
     "strings"
     "strconv"
+    "sync"
     
     // need an unreleased version of the gobpf library, using from a specific branch, reasoning in the thread below. 
     // https://stackoverflow.com/questions/73714654/not-enough-arguments-in-call-to-c2func-bcc-func-load
@@ -924,10 +925,32 @@ func run(){
     kafkaWriter = initKafka()
 
     connectionFactory := connections.NewFactory(time.Minute, time.Minute/2)
+
+    var (
+        isRunning bool
+        mu        sync.Mutex
+    )
+
 	go func() {
 		for {
-			connectionFactory.HandleReadyConnections(kafkaWriter)
-			time.Sleep(1 * time.Second)
+			time.Sleep(10 * time.Second)
+            if !isRunning {
+
+                mu.Lock()
+                if isRunning {
+                    mu.Unlock()
+                    return
+                }
+                isRunning = true
+                mu.Unlock()
+
+                go connectionFactory.HandleReadyConnections(kafkaWriter)
+
+                mu.Lock()
+                isRunning = false
+                mu.Unlock()
+
+            }
 		}
 	}()
 
