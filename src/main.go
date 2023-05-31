@@ -114,6 +114,8 @@ BPF_HASH(active_accept_args_map, u64, struct accept_args_t);
 BPF_HASH(active_close_args_map, u64, struct close_args_t);
 BPF_HASH(active_recvfrom_args_map, u64, struct data_args_t);
 BPF_HASH(active_sendto_args_map, u64, struct data_args_t);
+BPF_HASH(active_readv_args_map, u64, struct data_args_t);
+BPF_HASH(active_writev_args_map, u64, struct data_args_t);
 BPF_HASH(active_ssl_read_args_map, uint64_t, struct data_args_t);
 BPF_HASH(active_ssl_write_args_map, uint64_t, struct data_args_t);
 
@@ -344,7 +346,7 @@ int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec*
     write_args.iov = iov;
     write_args.iovlen = iovlen;
     bpf_trace_printk("write enter 2");
-    active_sendto_args_map.update(&id, &write_args);
+    active_writev_args_map.update(&id, &write_args);
   
     return 0;
 }
@@ -353,12 +355,12 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
     u64 id = bpf_get_current_pid_tgid();
   
     bpf_trace_printk("write exit 1");
-    struct data_args_t* write_args = active_sendto_args_map.lookup(&id);
+    struct data_args_t* write_args = active_writev_args_map.lookup(&id);
     if (write_args != NULL) {
       process_syscall_data_vecs(ctx, write_args, id, true);
     }
     bpf_trace_printk("write exit 2");
-    active_sendto_args_map.delete(&id);
+    active_writev_args_map.delete(&id);
     return 0;
   }
 
@@ -371,7 +373,7 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
     read_args.iov = iov;
     read_args.iovlen = iovlen;
     bpf_trace_printk("read enter 2");
-    active_recvfrom_args_map.update(&id, &read_args);
+    active_readv_args_map.update(&id, &read_args);
   
     return 0;
   }
@@ -380,12 +382,12 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
     u64 id = bpf_get_current_pid_tgid();
   
     bpf_trace_printk("read exit 1");
-    struct data_args_t* read_args = active_recvfrom_args_map.lookup(&id);
+    struct data_args_t* read_args = active_readv_args_map.lookup(&id);
     if (read_args != NULL) {
       process_syscall_data_vecs(ctx, read_args, id, false);
     }
     bpf_trace_printk("read exit 2");
-    active_recvfrom_args_map.delete(&id);
+    active_readv_args_map.delete(&id);
     return 0;
   }
 

@@ -64,12 +64,12 @@ func tryReadFromBD(tracker *Tracker, kafkaWriter *kafka.Writer) {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			break
 		} else if err != nil {
-			log.Println("HTTP-request", "HTTP Request error: %s\n", err)
+			log.Println("HTTP-response", "HTTP response error: %s\n", err)
 			return
 		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("HTTP-request-body", "Got body err: %s\n", err)
+			log.Println("HTTP-response-body", "Got body err: %s\n", err)
 			return
 		}
 		encoding := resp.Header["Content-Encoding"]
