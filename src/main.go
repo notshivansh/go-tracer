@@ -229,7 +229,7 @@ static __inline void process_syscall_data(struct pt_regs* ret, const struct data
     if (conn_info == NULL) {
         return;
     }
-    bpf_trace_printk("something %d",conn_info->ssl);
+    // bpf_trace_printk("something %d",conn_info->ssl);
     if (conn_info->ssl != ssl) {
         return;
     }
@@ -298,7 +298,7 @@ int syscall__probe_entry_accept(struct pt_regs* ctx, int sockfd, struct sockaddr
     struct accept_args_t accept_args = {};
     accept_args.addr = addr;
     active_accept_args_map.update(&id, &accept_args);
-    bpf_trace_printk("printing from accept");
+    // bpf_trace_printk("printing from accept");
     return 0;
 }
 
@@ -341,12 +341,12 @@ int syscall__probe_ret_close(struct pt_regs* ctx) {
 int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec* iov, int iovlen){
     u64 id = bpf_get_current_pid_tgid();
 
-    bpf_trace_printk("write enter 1");
+    // bpf_trace_printk("write enter 1");
     struct data_args_t write_args = {};
     write_args.fd = fd;
     write_args.iov = iov;
     write_args.iovlen = iovlen;
-    bpf_trace_printk("write enter 2");
+    // bpf_trace_printk("write enter 2");
     active_writev_args_map.update(&id, &write_args);
   
     return 0;
@@ -355,12 +355,12 @@ int syscall__probe_entry_writev(struct pt_regs* ctx, int fd, const struct iovec*
 int syscall__probe_ret_writev(struct pt_regs* ctx) {
     u64 id = bpf_get_current_pid_tgid();
   
-    bpf_trace_printk("write exit 1");
+    // bpf_trace_printk("write exit 1");
     struct data_args_t* write_args = active_writev_args_map.lookup(&id);
     if (write_args != NULL) {
       process_syscall_data_vecs(ctx, write_args, id, true);
     }
-    bpf_trace_printk("write exit 2");
+    // bpf_trace_printk("write exit 2");
     active_writev_args_map.delete(&id);
     return 0;
   }
@@ -368,12 +368,12 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
   int syscall__probe_entry_readv(struct pt_regs* ctx, int fd, struct iovec* iov, int iovlen) {
     u64 id = bpf_get_current_pid_tgid();
   
-    bpf_trace_printk("read enter 1");
+    // bpf_trace_printk("read enter 1");
     struct data_args_t read_args = {};
     read_args.fd = fd;
     read_args.iov = iov;
     read_args.iovlen = iovlen;
-    bpf_trace_printk("read enter 2");
+    // bpf_trace_printk("read enter 2");
     active_readv_args_map.update(&id, &read_args);
   
     return 0;
@@ -382,12 +382,12 @@ int syscall__probe_ret_writev(struct pt_regs* ctx) {
   int syscall__probe_ret_readv(struct pt_regs* ctx) {
     u64 id = bpf_get_current_pid_tgid();
   
-    bpf_trace_printk("read exit 1");
+    // bpf_trace_printk("read exit 1");
     struct data_args_t* read_args = active_readv_args_map.lookup(&id);
     if (read_args != NULL) {
       process_syscall_data_vecs(ctx, read_args, id, false);
     }
-    bpf_trace_printk("read exit 2");
+    // bpf_trace_printk("read exit 2");
     active_readv_args_map.delete(&id);
     return 0;
   }
@@ -446,7 +446,7 @@ int syscall__probe_entry_accept4(struct pt_regs* ctx, int sockfd, struct sockadd
 
     u32 pid = id >> 32;
 
-    bpf_trace_printk("syscall__probe_entry_accept4: step 1: %d\\n", pid);
+    // bpf_trace_printk("syscall__probe_entry_accept4: step 1: %d\\n", pid);
     return 0;
 }
 
@@ -456,7 +456,7 @@ int syscall__probe_ret_accept4(struct pt_regs* ctx) {
 
     u32 pid = id >> 32;
 
-    bpf_trace_printk("syscall__probe_ret_accept4: step 1: %d\\n", pid);
+    // bpf_trace_printk("syscall__probe_ret_accept4: step 1: %d\\n", pid);
     return 0;
 }
 
@@ -944,7 +944,7 @@ func run(){
                 isRunning = true
                 mu.Unlock()
 
-                go connectionFactory.HandleReadyConnections(kafkaWriter)
+                connectionFactory.HandleReadyConnections(kafkaWriter)
 
                 mu.Lock()
                 isRunning = false
