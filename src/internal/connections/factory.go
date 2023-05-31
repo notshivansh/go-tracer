@@ -39,7 +39,7 @@ func (factory *Factory) HandleReadyConnections(kafkaWriter *kafka.Writer) {
 			if kafkaWriter != nil {
 				tryReadFromBD(tracker, kafkaWriter)
 			}
-		} else tracker.IsInactive(factory.inactivityThreshold) {
+		} else if tracker.IsInactive(factory.inactivityThreshold) {
 			trackersToDelete[connID] = struct{}{}
 		}
 	}
