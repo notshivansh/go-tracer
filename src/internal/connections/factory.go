@@ -31,7 +31,7 @@ func (factory *Factory) HandleReadyConnections(kafkaWriter *kafka.Writer) {
 	trackersToDelete := make(map[structs.ConnID]struct{})
 
 	for connID, tracker := range factory.connections {
-		if tracker.IsComplete(factory.completeThreshold) || tracker.IsInactive(factory.inactivityThreshold) {
+		if tracker.IsComplete(factory.completeThreshold) {
 			trackersToDelete[connID] = struct{}{}
 			if len(tracker.sentBuf) == 0 && len(tracker.recvBuf) == 0 {
 				continue
@@ -39,6 +39,8 @@ func (factory *Factory) HandleReadyConnections(kafkaWriter *kafka.Writer) {
 			if kafkaWriter != nil {
 				tryReadFromBD(tracker, kafkaWriter)
 			}
+		} else tracker.IsInactive(factory.inactivityThreshold) {
+			trackersToDelete[connID] = struct{}{}
 		}
 	}
 	factory.mutex.Lock()
