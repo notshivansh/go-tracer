@@ -15,15 +15,17 @@ type Factory struct {
 	inactivityThreshold time.Duration
 	completeThreshold   time.Duration
 	mutex               *sync.RWMutex
+	maxActiveConnections uint64
 }
 
 // NewFactory creates a new instance of the factory.
-func NewFactory(inactivityThreshold time.Duration, completeThreshold time.Duration) *Factory {
+func NewFactory(inactivityThreshold time.Duration, completeThreshold time.Duration, maxActiveConnections uint64) *Factory {
 	return &Factory{
 		connections:         make(map[structs.ConnID]*Tracker),
 		mutex:               &sync.RWMutex{},
 		inactivityThreshold: inactivityThreshold,
 		completeThreshold:   completeThreshold,
+		maxActiveConnections: maxActiveConnections,
 	}
 }
 
@@ -61,6 +63,12 @@ func (factory *Factory) GetOrCreate(connectionID structs.ConnID) *Tracker {
 		return factory.connections[connectionID]
 	}
 	return tracker
+}
+
+func (factory *Factory) CanBeFilled() bool {
+	factory.mutex.RLock()
+	defer factory.mutex.RUnlock()
+	return len(factory.connections) < factory.maxActiveConnections
 }
 
 // Get returns a tracker that related to the given connection and transaction ids. If there is no such tracker

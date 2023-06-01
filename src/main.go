@@ -787,6 +787,11 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 		if data == nil {
 			return
 		}
+
+        if !connectionFactory.CanBeFilled() {
+            return 
+        }
+
 		var event structs.SocketOpenEvent
 		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
 			log.Printf("Failed to decode received data on socker open: %+v", err)
@@ -830,6 +835,11 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 		if data == nil {
 			return
 		}
+
+        if !connectionFactory.CanBeFilled() {
+            return 
+        }
+
 		var event structs.SocketDataEvent
 
 		// binary.Read require the input data to be at the same size of the object.
@@ -924,12 +934,10 @@ func run(){
 
     kafkaWriter = initKafka()
 
-    connectionFactory := connections.NewFactory(time.Minute, time.Minute/2)
+    connectionFactory := connections.NewFactory(time.Minute, time.Minute/2, 1024)
 
-    var (
-        isRunning bool
-        mu        sync.Mutex
-    )
+    var isRunning bool
+    var mu = &sync.Mutex{}
 
 	go func() {
 		for {

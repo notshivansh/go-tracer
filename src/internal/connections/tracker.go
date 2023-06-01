@@ -18,6 +18,7 @@ type Tracker struct {
 
 	openTimestamp  uint64
 	closeTimestamp uint64
+	lastAccessTimestamp uint64
 
 	// Indicates the tracker stopped tracking due to closing the session.
 	sentBytes             uint64
@@ -48,7 +49,7 @@ func (conn *Tracker) IsComplete(duration time.Duration) bool {
 func (conn *Tracker) IsInactive(duration time.Duration) bool {
 	conn.mutex.RLock()
 	defer conn.mutex.RUnlock()
-	return conn.closeTimestamp==0 && uint64(time.Now().UnixNano())-conn.openTimestamp > uint64(duration.Nanoseconds())
+	return conn.lastAccessTimestamp!=0 && uint64(time.Now().UnixNano())-conn.lastAccessTimestamp > uint64(duration.Nanoseconds())
 }
 
 func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
@@ -64,6 +65,7 @@ func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
 		conn.recvBuf = append(conn.recvBuf, event.Msg[:utils.Abs(bytesSent)]...)
 		conn.recvBytes += uint64(utils.Abs(bytesSent))
 	}
+	conn.lastAccessTimestamp = uint64(time.Now().UnixNano())
 }
 
 func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
@@ -74,6 +76,7 @@ func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
 		log.Printf("Changed open info timestamp from %v to %v", conn.openTimestamp, event.ConnId.Conn_start_ns)
 	}
 	conn.openTimestamp = event.ConnId.Conn_start_ns
+	conn.lastAccessTimestamp = uint64(time.Now().UnixNano())
 }
 
 func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
@@ -81,5 +84,6 @@ func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	defer conn.mutex.Unlock()
 	
 	conn.closeTimestamp = uint64(time.Now().UnixNano())
+	conn.lastAccessTimestamp = uint64(time.Now().UnixNano())
 }
 
