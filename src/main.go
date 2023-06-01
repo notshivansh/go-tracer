@@ -934,7 +934,7 @@ func run(){
 
     kafkaWriter = initKafka()
 
-    connectionFactory := connections.NewFactory(time.Minute, time.Minute/2, 1024)
+    connectionFactory := connections.NewFactory(time.Minute/2, time.Minute/4, 4096)
 
     var isRunning bool
     var mu = &sync.Mutex{}

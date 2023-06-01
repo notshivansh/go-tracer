@@ -15,11 +15,11 @@ type Factory struct {
 	inactivityThreshold time.Duration
 	completeThreshold   time.Duration
 	mutex               *sync.RWMutex
-	maxActiveConnections uint64
+	maxActiveConnections int
 }
 
 // NewFactory creates a new instance of the factory.
-func NewFactory(inactivityThreshold time.Duration, completeThreshold time.Duration, maxActiveConnections uint64) *Factory {
+func NewFactory(inactivityThreshold time.Duration, completeThreshold time.Duration, maxActiveConnections int) *Factory {
 	return &Factory{
 		connections:         make(map[structs.ConnID]*Tracker),
 		mutex:               &sync.RWMutex{},
