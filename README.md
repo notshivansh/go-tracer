@@ -10,7 +10,7 @@ Voila.. EBPF delpoyed
 
 Notes:
 
-"iov" releated headers are not added 
+some "iov" releated headers are added 
 
 The current working image is created using alpine:3.18, and works smoothly.
 To implement multistage builds: https://faun.pub/the-martial-arts-of-writing-go-dockerfile-9dcffd010619
