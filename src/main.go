@@ -573,6 +573,18 @@ int probe_ret_SSL_read(struct pt_regs* ctx) {
 var (
 	level1hooks = []bpfwrapper.Kprobe{
 		{
+			FunctionToHook: "connect",
+			HookName:       "syscall__probe_entry_accept",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "connect",
+			HookName:       "syscall__probe_ret_accept",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
 			FunctionToHook: "accept",
 			HookName:       "syscall__probe_entry_accept",
 			Type:           bpfwrapper.EntryType,
@@ -1074,7 +1086,7 @@ func run(){
     hooks = append(hooks, level1hooks...)
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_data_events", socketDataEventCallback))
     if len(captureSsl)==0 || captureSsl=="false" {
-        if  len(captureEgress)>0 && captureEgress=="true"{
+        if  len(captureEgress)>0 && captureEgress=="true" {
             hooks = append(hooks, level2hooksEgress...)
             hooks = append(hooks, level3hooksEgress...)
         } else {
@@ -1082,7 +1094,6 @@ func run(){
             hooks = append(hooks, level3hooks...)
 
         }
-
     }
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_close_events", socketCloseEventCallback))
     hooks = append(hooks, level4hooks...)
