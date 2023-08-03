@@ -964,12 +964,16 @@ func run(){
 
 	callbacks := make([]*bpfwrapper.ProbeChannel, 0)
 
+    captureSsl := os.Getenv("CAPTURE_SSL")
+
     hooks := make([]bpfwrapper.Kprobe, 0)
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_open_events", socketOpenEventCallback))
     hooks = append(hooks, level1hooks...)
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_data_events", socketDataEventCallback))
-    hooks = append(hooks, level2hooks...)
-    hooks = append(hooks, level3hooks...)
+    if len(captureSsl)=0 || captureSsl==false {
+        hooks = append(hooks, level2hooks...)
+        hooks = append(hooks, level3hooks...)
+    }
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_close_events", socketCloseEventCallback))
     hooks = append(hooks, level4hooks...)
 
@@ -981,19 +985,21 @@ func run(){
 		log.Panic(err)
 	}
 
-    opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
-    if len(opensslPath) > 0 {
-        opensslPath = strings.Replace(opensslPath, "usr","usr_host",1)
-        if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
-            log.Printf("%s",err.Error())
+    if captureSsl==true {
+        opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
+        if len(opensslPath) > 0 {
+            opensslPath = strings.Replace(opensslPath, "usr","usr_host",1)
+            if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
+                log.Printf("%s",err.Error())
+            }
         }
-    }
-
-    boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
-    if len(boringLibsslPath) > 0 {
-        boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host",1)
-        if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
-            log.Printf("%s",err.Error())
+    
+        boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
+        if len(boringLibsslPath) > 0 {
+            boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host",1)
+            if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
+                log.Printf("%s",err.Error())
+            }
         }
     }
 
