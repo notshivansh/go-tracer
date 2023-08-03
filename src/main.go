@@ -649,6 +649,57 @@ var (
 		},
 	}
 
+    level2hooksEgress = []bpfwrapper.Kprobe{
+		{
+			FunctionToHook: "sendto",
+			HookName:       "syscall__probe_entry_recvfrom",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "sendto",
+			HookName:       "syscall__probe_ret_recvfrom",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "send",
+			HookName:       "syscall__probe_entry_recvfrom",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "send",
+			HookName:       "syscall__probe_ret_recvfrom",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "write",
+			HookName:       "syscall__probe_entry_recvfrom",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "write",
+			HookName:       "syscall__probe_ret_recvfrom",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "writev",
+			HookName:       "syscall__probe_entry_readv",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "writev",
+			HookName:       "syscall__probe_ret_readv",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+	}
+
 	level3hooks = []bpfwrapper.Kprobe{
 		{
 			FunctionToHook: "sendto",
@@ -694,6 +745,57 @@ var (
 		},
         {
 			FunctionToHook: "writev",
+			HookName:       "syscall__probe_ret_writev",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+	}
+
+    level3hooksEgress = []bpfwrapper.Kprobe{
+		{
+			FunctionToHook: "recvfrom",
+			HookName:       "syscall__probe_entry_sendto",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "recvfrom",
+			HookName:       "syscall__probe_ret_sendto",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "recv",
+			HookName:       "syscall__probe_entry_sendto",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "recv",
+			HookName:       "syscall__probe_ret_sendto",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "read",
+			HookName:       "syscall__probe_entry_sendto",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+		{
+			FunctionToHook: "read",
+			HookName:       "syscall__probe_ret_sendto",
+			Type:           bpfwrapper.ReturnType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "readv",
+			HookName:       "syscall__probe_entry_writev",
+			Type:           bpfwrapper.EntryType,
+			IsSyscall:      true,
+		},
+        {
+			FunctionToHook: "readv",
 			HookName:       "syscall__probe_ret_writev",
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
@@ -965,14 +1067,22 @@ func run(){
 	callbacks := make([]*bpfwrapper.ProbeChannel, 0)
 
     captureSsl := os.Getenv("CAPTURE_SSL")
+    captureEgress := os.Getenv("CAPTURE_EGRESS")
 
     hooks := make([]bpfwrapper.Kprobe, 0)
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_open_events", socketOpenEventCallback))
     hooks = append(hooks, level1hooks...)
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_data_events", socketDataEventCallback))
     if len(captureSsl)==0 || captureSsl=="false" {
-        hooks = append(hooks, level2hooks...)
-        hooks = append(hooks, level3hooks...)
+        if  len(captureEgress)>0 && captureEgress=="true"{
+            hooks = append(hooks, level2hooksEgress...)
+            hooks = append(hooks, level3hooksEgress...)
+        } else {
+            hooks = append(hooks, level2hooks...)
+            hooks = append(hooks, level3hooks...)
+
+        }
+
     }
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_close_events", socketCloseEventCallback))
     hooks = append(hooks, level4hooks...)
