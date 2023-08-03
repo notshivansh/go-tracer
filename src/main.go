@@ -970,7 +970,7 @@ func run(){
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_open_events", socketOpenEventCallback))
     hooks = append(hooks, level1hooks...)
     callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_data_events", socketDataEventCallback))
-    if len(captureSsl)=0 || captureSsl==false {
+    if len(captureSsl)==0 || captureSsl==false {
         hooks = append(hooks, level2hooks...)
         hooks = append(hooks, level3hooks...)
     }
