@@ -906,6 +906,49 @@ var (
 		},
     }
 
+    sslHooksEgress = []bpfwrapper.Uprobe{
+		{
+			FunctionToHook: "SSL_read",
+			HookName:       "probe_entry_SSL_write",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_read",
+			HookName:       "probe_ret_SSL_write",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_write",
+			HookName:       "probe_entry_SSL_read",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_write",
+			HookName:       "probe_ret_SSL_read",
+			Type:           bpfwrapper.ReturnType,
+		},
+        {
+			FunctionToHook: "SSL_read_ex",
+			HookName:       "probe_entry_SSL_write",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_read_ex",
+			HookName:       "probe_ret_SSL_write",
+			Type:           bpfwrapper.ReturnType,
+		},
+		{
+			FunctionToHook: "SSL_write_ex",
+			HookName:       "probe_entry_SSL_read",
+			Type:           bpfwrapper.EntryType,
+		},
+		{
+			FunctionToHook: "SSL_write_ex",
+			HookName:       "probe_ret_SSL_read",
+			Type:           bpfwrapper.ReturnType,
+		},
+    }
+
     boringsslHooks = []bpfwrapper.Uprobe{
 		{
 			FunctionToHook: "SSL_write",
@@ -1145,8 +1188,14 @@ func run(){
         opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
         if len(opensslPath) > 0 {
             opensslPath = strings.Replace(opensslPath, "usr","usr_host",1)
-            if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
-                log.Printf("%s",err.Error())
+            if len(captureEgress)>0 && captureEgress=="true" {
+                if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooksEgress); err != nil {
+                    log.Printf("%s",err.Error())
+                }
+            } else {
+                if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
+                    log.Printf("%s",err.Error())
+                }
             }
         }
     
