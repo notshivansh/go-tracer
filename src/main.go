@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	// "flag"
-	// "fmt"
+	"fmt"
 	"os"
 	"os/signal"
 	// "strconv"
@@ -1056,9 +1056,9 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
         connId := event.Attr.ConnId
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
-        // fmt.Println("<------------")
-        // fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:utils.Abs(bytesSent)])
-        // fmt.Println("------------>")
+        fmt.Println("<------------")
+        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:utils.Abs(bytesSent)])
+        fmt.Println("------------>")
 	}
 }
 
