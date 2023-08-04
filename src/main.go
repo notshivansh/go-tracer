@@ -61,6 +61,7 @@ union sockaddr_t {
 
 struct accept_args_t {
     struct sockaddr* addr;
+    u32 fd;
 };
 
 struct data_args_t {
@@ -124,10 +125,10 @@ static __inline u64 gen_tgid_fd(u32 tgid, int fd) {
   return ((u64)tgid << 32) | (u32)fd;
 }
 
-static __inline void process_syscall_accept(struct pt_regs* ret, const struct accept_args_t* args, u64 id) {
+static __inline void process_syscall_accept(struct pt_regs* ret, const struct accept_args_t* args, u64 id, bool isConnect) {
     int ret_fd = PT_REGS_RC(ret);
 
-    if (ret_fd < 0) {
+    if(!isConnect && ret_fd < 0){
         return;
     }
     union sockaddr_t* addr;
@@ -144,7 +145,11 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
 
     struct conn_info_t conn_info = {};
     conn_info.id = id;
-    conn_info.fd = ret_fd;
+    if(isConnect){
+        conn_info.fd = args->fd;
+    } else {
+        conn_info.fd = ret_fd;
+    }
     conn_info.conn_start_ns = bpf_ktime_get_ns();
 
     if ( addr->sa.sa_family == AF_INET ){
@@ -163,8 +168,13 @@ static __inline void process_syscall_accept(struct pt_regs* ret, const struct ac
 
 
     u32 tgid = id >> 32;
-    u64 tgid_fd = gen_tgid_fd(tgid, ret_fd);
-    conn_info_map.update(&tgid_fd, &conn_info);
+    if(isConnect){
+        u64 tgid_fd = gen_tgid_fd(tgid, args->fd);
+        conn_info_map.update(&tgid_fd, &conn_info);
+    } else {
+        u64 tgid_fd = gen_tgid_fd(tgid, ret_fd);
+        conn_info_map.update(&tgid_fd, &conn_info);
+    }
 
     struct socket_open_event_t socket_open_event = {};
     socket_open_event.id = conn_info.id;
@@ -308,7 +318,31 @@ int syscall__probe_ret_accept(struct pt_regs* ctx) {
     struct accept_args_t* accept_args = active_accept_args_map.lookup(&id);
 
     if (accept_args != NULL) {
-        process_syscall_accept(ctx, accept_args, id);
+        process_syscall_accept(ctx, accept_args, id, false);
+    }
+
+    active_accept_args_map.delete(&id);
+    return 0;
+}
+
+int syscall__probe_entry_connect(struct pt_regs* ctx, int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+    u64 id = bpf_get_current_pid_tgid();
+
+    struct accept_args_t accept_args = {};
+    accept_args.fd = sockfd;
+    accept_args.addr = addr;
+    active_accept_args_map.update(&id, &accept_args);
+    // bpf_trace_printk("printing from accept");
+    return 0;
+}
+
+int syscall__probe_ret_connect(struct pt_regs* ctx) {
+    u64 id = bpf_get_current_pid_tgid();
+
+    struct accept_args_t* accept_args = active_accept_args_map.lookup(&id);
+
+    if (accept_args != NULL) {
+        process_syscall_accept(ctx, accept_args, id, true);
     }
 
     active_accept_args_map.delete(&id);
@@ -574,13 +608,13 @@ var (
 	level1hooks = []bpfwrapper.Kprobe{
 		{
 			FunctionToHook: "connect",
-			HookName:       "syscall__probe_entry_accept",
+			HookName:       "syscall__probe_entry_connect",
 			Type:           bpfwrapper.EntryType,
 			IsSyscall:      true,
 		},
 		{
 			FunctionToHook: "connect",
-			HookName:       "syscall__probe_ret_accept",
+			HookName:       "syscall__probe_ret_connect",
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
@@ -912,6 +946,7 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
+        fmt.Printf("Got data event of size %v, with data: %v", event.ConnId.Ip, event.ConnId.Port)
         connId := event.ConnId
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
