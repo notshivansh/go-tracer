@@ -985,11 +985,11 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 
 		var event structs.SocketOpenEvent
 		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
-			log.Printf("Failed to decode received data on socker open: %+v", err)
+			log.Printf("Failed to decode received data on socket open: %+v", err)
 			continue
 		}
 
-        fmt.Printf("Got data event of size %v, with data: %v", event.ConnId.Ip, event.ConnId.Port)
+        fmt.Printf("Got data with IP %v, on port: %v", event.ConnId.Ip, event.ConnId.Port)
         connId := event.ConnId
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
