@@ -1,30 +1,31 @@
-
 package connections
 
 import (
+	"go-tracer/internal/structs"
+
+	"github.com/segmentio/kafka-go"
+
 	// "fmt"
 	"sync"
 	"time"
-	"go-tracer/internal/structs"
-	"github.com/segmentio/kafka-go"
 )
 
 // Factory is a routine-safe container that holds a trackers with unique ID, and able to create new tracker.
 type Factory struct {
-	connections         map[structs.ConnID]*Tracker
-	inactivityThreshold time.Duration
-	completeThreshold   time.Duration
-	mutex               *sync.RWMutex
+	connections          map[structs.ConnID]*Tracker
+	inactivityThreshold  time.Duration
+	completeThreshold    time.Duration
+	mutex                *sync.RWMutex
 	maxActiveConnections int
 }
 
 // NewFactory creates a new instance of the factory.
 func NewFactory(inactivityThreshold time.Duration, completeThreshold time.Duration, maxActiveConnections int) *Factory {
 	return &Factory{
-		connections:         make(map[structs.ConnID]*Tracker),
-		mutex:               &sync.RWMutex{},
-		inactivityThreshold: inactivityThreshold,
-		completeThreshold:   completeThreshold,
+		connections:          make(map[structs.ConnID]*Tracker),
+		mutex:                &sync.RWMutex{},
+		inactivityThreshold:  inactivityThreshold,
+		completeThreshold:    completeThreshold,
 		maxActiveConnections: maxActiveConnections,
 	}
 }

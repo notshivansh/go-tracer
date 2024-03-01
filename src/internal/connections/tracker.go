@@ -1,12 +1,11 @@
-
 package connections
 
 import (
+	"go-tracer/internal/structs"
+	"go-tracer/internal/utils"
 	"log"
 	"sync"
 	"time"
-	"go-tracer/internal/structs"
-	"go-tracer/internal/utils"
 )
 
 const (
@@ -16,13 +15,13 @@ const (
 type Tracker struct {
 	connID structs.ConnID
 
-	openTimestamp  uint64
-	closeTimestamp uint64
+	openTimestamp       uint64
+	closeTimestamp      uint64
 	lastAccessTimestamp uint64
 
 	// Indicates the tracker stopped tracking due to closing the session.
-	sentBytes             uint64
-	recvBytes             uint64
+	sentBytes uint64
+	recvBytes uint64
 
 	recvBuf []byte
 	sentBuf []byte
@@ -43,20 +42,20 @@ func NewTracker(connID structs.ConnID) *Tracker {
 func (conn *Tracker) IsComplete(duration time.Duration) bool {
 	conn.mutex.RLock()
 	defer conn.mutex.RUnlock()
-	return conn.closeTimestamp!=0 && uint64(time.Now().UnixNano())-conn.closeTimestamp > uint64(duration.Nanoseconds())
+	return conn.closeTimestamp != 0 && uint64(time.Now().UnixNano())-conn.closeTimestamp > uint64(duration.Nanoseconds())
 }
 
 func (conn *Tracker) IsInactive(duration time.Duration) bool {
 	conn.mutex.RLock()
 	defer conn.mutex.RUnlock()
-	return conn.lastAccessTimestamp!=0 && uint64(time.Now().UnixNano())-conn.lastAccessTimestamp > uint64(duration.Nanoseconds())
+	return conn.lastAccessTimestamp != 0 && uint64(time.Now().UnixNano())-conn.lastAccessTimestamp > uint64(duration.Nanoseconds())
 }
 
 func (conn *Tracker) AddDataEvent(event structs.SocketDataEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
 
-	bytesSent := (event.Attr.Bytes_sent>>32)>>16
+	bytesSent := (event.Attr.Bytes_sent >> 32) >> 16
 
 	if bytesSent > 0 {
 		conn.sentBuf = append(conn.sentBuf, event.Msg[:utils.Abs(bytesSent)]...)
@@ -82,8 +81,7 @@ func (conn *Tracker) AddOpenEvent(event structs.SocketOpenEvent) {
 func (conn *Tracker) AddCloseEvent(event structs.SocketCloseEvent) {
 	conn.mutex.Lock()
 	defer conn.mutex.Unlock()
-	
+
 	conn.closeTimestamp = uint64(time.Now().UnixNano())
 	conn.lastAccessTimestamp = uint64(time.Now().UnixNano())
 }
-

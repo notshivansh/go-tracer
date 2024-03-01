@@ -4,31 +4,34 @@ import (
 	// "bufio"
 	"bytes"
 	"encoding/binary"
+
 	// "flag"
 	"fmt"
 	"os"
 	"os/signal"
+
 	// "strconv"
 	// "strings"
 	"unsafe"
-    // "io/ioutil"
+	// "io/ioutil"
 	"log"
+	"strconv"
+	"strings"
+	"sync"
 	"syscall"
 	"time"
-    "strings"
-    "strconv"
-    "sync"
-    
-    // need an unreleased version of the gobpf library, using from a specific branch, reasoning in the thread below. 
-    // https://stackoverflow.com/questions/73714654/not-enough-arguments-in-call-to-c2func-bcc-func-load
+
+	// need an unreleased version of the gobpf library, using from a specific branch, reasoning in the thread below.
+	// https://stackoverflow.com/questions/73714654/not-enough-arguments-in-call-to-c2func-bcc-func-load
 	"github.com/iovisor/gobpf/bcc"
 
-    "github.com/segmentio/kafka-go"
 	"go-tracer/internal/bpfwrapper"
 	"go-tracer/internal/connections"
 	"go-tracer/internal/structs"
-    "go-tracer/internal/utils"
-    "github.com/akto-api-security/gomiddleware"
+	"go-tracer/internal/utils"
+
+	"github.com/akto-api-security/gomiddleware"
+	"github.com/segmentio/kafka-go"
 )
 
 import "C"
@@ -618,7 +621,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "accept",
 			HookName:       "syscall__probe_entry_accept",
 			Type:           bpfwrapper.EntryType,
@@ -630,7 +633,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "accept4",
 			HookName:       "syscall__probe_entry_accept",
 			Type:           bpfwrapper.EntryType,
@@ -657,7 +660,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "recv",
 			HookName:       "syscall__probe_entry_recvfrom",
 			Type:           bpfwrapper.EntryType,
@@ -669,7 +672,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "read",
 			HookName:       "syscall__probe_entry_recvfrom",
 			Type:           bpfwrapper.EntryType,
@@ -681,13 +684,13 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "readv",
 			HookName:       "syscall__probe_entry_readv",
 			Type:           bpfwrapper.EntryType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "readv",
 			HookName:       "syscall__probe_ret_readv",
 			Type:           bpfwrapper.ReturnType,
@@ -695,7 +698,7 @@ var (
 		},
 	}
 
-    level2hooksEgress = []bpfwrapper.Kprobe{
+	level2hooksEgress = []bpfwrapper.Kprobe{
 		{
 			FunctionToHook: "sendto",
 			HookName:       "syscall__probe_entry_recvfrom",
@@ -708,7 +711,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "send",
 			HookName:       "syscall__probe_entry_recvfrom",
 			Type:           bpfwrapper.EntryType,
@@ -720,7 +723,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "write",
 			HookName:       "syscall__probe_entry_recvfrom",
 			Type:           bpfwrapper.EntryType,
@@ -732,13 +735,13 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "writev",
 			HookName:       "syscall__probe_entry_readv",
 			Type:           bpfwrapper.EntryType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "writev",
 			HookName:       "syscall__probe_ret_readv",
 			Type:           bpfwrapper.ReturnType,
@@ -759,7 +762,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "send",
 			HookName:       "syscall__probe_entry_sendto",
 			Type:           bpfwrapper.EntryType,
@@ -771,7 +774,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "write",
 			HookName:       "syscall__probe_entry_sendto",
 			Type:           bpfwrapper.EntryType,
@@ -783,13 +786,13 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "writev",
 			HookName:       "syscall__probe_entry_writev",
 			Type:           bpfwrapper.EntryType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "writev",
 			HookName:       "syscall__probe_ret_writev",
 			Type:           bpfwrapper.ReturnType,
@@ -797,7 +800,7 @@ var (
 		},
 	}
 
-    level3hooksEgress = []bpfwrapper.Kprobe{
+	level3hooksEgress = []bpfwrapper.Kprobe{
 		{
 			FunctionToHook: "recvfrom",
 			HookName:       "syscall__probe_entry_sendto",
@@ -810,7 +813,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "recv",
 			HookName:       "syscall__probe_entry_sendto",
 			Type:           bpfwrapper.EntryType,
@@ -822,7 +825,7 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "read",
 			HookName:       "syscall__probe_entry_sendto",
 			Type:           bpfwrapper.EntryType,
@@ -834,13 +837,13 @@ var (
 			Type:           bpfwrapper.ReturnType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "readv",
 			HookName:       "syscall__probe_entry_writev",
 			Type:           bpfwrapper.EntryType,
 			IsSyscall:      true,
 		},
-        {
+		{
 			FunctionToHook: "readv",
 			HookName:       "syscall__probe_ret_writev",
 			Type:           bpfwrapper.ReturnType,
@@ -863,7 +866,7 @@ var (
 		},
 	}
 
-    sslHooks = []bpfwrapper.Uprobe{
+	sslHooks = []bpfwrapper.Uprobe{
 		{
 			FunctionToHook: "SSL_write",
 			HookName:       "probe_entry_SSL_write",
@@ -884,7 +887,7 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-        {
+		{
 			FunctionToHook: "SSL_write_ex",
 			HookName:       "probe_entry_SSL_write",
 			Type:           bpfwrapper.EntryType,
@@ -904,9 +907,9 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-    }
+	}
 
-    sslHooksEgress = []bpfwrapper.Uprobe{
+	sslHooksEgress = []bpfwrapper.Uprobe{
 		{
 			FunctionToHook: "SSL_read",
 			HookName:       "probe_entry_SSL_write",
@@ -927,7 +930,7 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-        {
+		{
 			FunctionToHook: "SSL_read_ex",
 			HookName:       "probe_entry_SSL_write",
 			Type:           bpfwrapper.EntryType,
@@ -947,9 +950,9 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-    }
+	}
 
-    boringsslHooks = []bpfwrapper.Uprobe{
+	boringsslHooks = []bpfwrapper.Uprobe{
 		{
 			FunctionToHook: "SSL_write",
 			HookName:       "probe_entry_SSL_write_boring",
@@ -970,7 +973,7 @@ var (
 			HookName:       "probe_ret_SSL_read",
 			Type:           bpfwrapper.ReturnType,
 		},
-    }
+	}
 )
 
 func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
@@ -979,9 +982,9 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			return
 		}
 
-        if !connectionFactory.CanBeFilled() {
-            return 
-        }
+		if !connectionFactory.CanBeFilled() {
+			return
+		}
 
 		var event structs.SocketOpenEvent
 		if err := binary.Read(bytes.NewReader(data), bcc.GetHostByteOrder(), &event); err != nil {
@@ -989,11 +992,11 @@ func socketOpenEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
-        fmt.Printf("Got data with IP %v, on port: %v", event.ConnId.Ip, event.ConnId.Port)
-        connId := event.ConnId
+		fmt.Printf("Got data with IP %v, on port: %v", event.ConnId.Ip, event.ConnId.Port)
+		connId := event.ConnId
 		connectionFactory.GetOrCreate(connId).AddOpenEvent(event)
 
-        }
+	}
 }
 
 func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connections.Factory) {
@@ -1007,7 +1010,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 			continue
 		}
 
-        connId := event.ConnId
+		connId := event.ConnId
 		tracker := connectionFactory.Get(connId)
 		if tracker == nil {
 			continue
@@ -1018,7 +1021,7 @@ func socketCloseEventCallback(inputChan chan []byte, connectionFactory *connecti
 }
 
 var (
-    // this also includes space lost in padding.
+	// this also includes space lost in padding.
 	eventAttributesSize = int(unsafe.Sizeof(structs.SocketDataEventAttr{}))
 )
 
@@ -1028,9 +1031,9 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 			return
 		}
 
-        if !connectionFactory.CanBeFilled() {
-            return 
-        }
+		if !connectionFactory.CanBeFilled() {
+			return
+		}
 
 		var event structs.SocketDataEvent
 
@@ -1043,46 +1046,45 @@ func socketDataEventCallback(inputChan chan []byte, connectionFactory *connectio
 			continue
 		}
 
-        // the first 16 bits are relevant, but since we get more data, we use bitwise operation to extract thee first 16 bits.
-        bytesSent := (event.Attr.Bytes_sent>>32)>>16
+		// the first 16 bits are relevant, but since we get more data, we use bitwise operation to extract the first 16 bits.
+		bytesSent := (event.Attr.Bytes_sent >> 32) >> 16
 
-        // The 4 bytes are being lost in padding, thus, not taking them into consideration.
-        eventAttributesLogicalSize := 36
+		// The 4 bytes are being lost in padding, thus, not taking them into consideration.
+		eventAttributesLogicalSize := 36
 
 		if len(data) > eventAttributesLogicalSize {
 			copy(event.Msg[:], data[eventAttributesLogicalSize:eventAttributesLogicalSize+int(utils.Abs(bytesSent))])
 		}
 
-        connId := event.Attr.ConnId
+		connId := event.Attr.ConnId
 		connectionFactory.GetOrCreate(connId).AddDataEvent(event)
 
-        fmt.Println("<------------")
-        fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:utils.Abs(bytesSent)])
-        fmt.Println("------------>")
+		fmt.Println("<------------")
+		fmt.Printf("Got data event of size %v, with data: %s", event.Attr.Bytes_sent, event.Msg[:utils.Abs(bytesSent)])
+		fmt.Println("------------>")
 	}
 }
 
-
-func replaceOpensslMacros(){
-    opensslVersion := os.Getenv("OPENSSL_VERSION_AKTO")
-    fixed := false
-    if len(opensslVersion) > 0 {
-        split := strings.Split(opensslVersion,".")
-        if len(split) == 3 {
-            if split[0] == "1" &&  ( split[1] == "0" || strings.HasPrefix(split[2],"0") ) {
-                source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x28",1)
-                fixed = true
-            }
-        }
-    }
-    if !fixed {
-        source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x30",1)
-    }
+func replaceOpensslMacros() {
+	opensslVersion := os.Getenv("OPENSSL_VERSION_AKTO")
+	fixed := false
+	if len(opensslVersion) > 0 {
+		split := strings.Split(opensslVersion, ".")
+		if len(split) == 3 {
+			if split[0] == "1" && (split[1] == "0" || strings.HasPrefix(split[2], "0")) {
+				source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x28", 1)
+				fixed = true
+			}
+		}
+	}
+	if !fixed {
+		source = strings.Replace(source, "RBIO_NUM_OFFSET", "0x30", 1)
+	}
 }
 
 func initKafka() (kafkaWriter *kafka.Writer) {
 
-    kafka_url := os.Getenv("AKTO_KAFKA_BROKER_MAL")
+	kafka_url := os.Getenv("AKTO_KAFKA_BROKER_MAL")
 	log.Println("kafka_url", kafka_url)
 
 	if len(kafka_url) == 0 {
@@ -1104,79 +1106,79 @@ func initKafka() (kafkaWriter *kafka.Writer) {
 	kafka_batch_time_secs_duration := time.Duration(kafka_batch_time_secs)
 
 	kafkaWriter = gomiddleware.GetKafkaWriter(kafka_url, "akto.api.logs", kafka_batch_size, kafka_batch_time_secs_duration*time.Second)
-    
-    return
+
+	return
 }
 
 func main() {
 	run()
 }
 
-func run(){
-	
-    replaceOpensslMacros()
+func run() {
+
+	replaceOpensslMacros()
 
 	bpfModule := bcc.NewModule(source, []string{})
-    if bpfModule == nil {
+	if bpfModule == nil {
 		log.Panic("bpf is nil")
 	}
 	defer bpfModule.Close()
 
-    var kafkaWriter *kafka.Writer
+	var kafkaWriter *kafka.Writer
 
-    kafkaWriter = initKafka()
+	kafkaWriter = initKafka()
 
-    connectionFactory := connections.NewFactory(time.Minute/2, time.Minute/4, 4096)
+	connectionFactory := connections.NewFactory(time.Minute/2, time.Minute/4, 4096)
 
-    var isRunning bool
-    var mu = &sync.Mutex{}
+	var isRunning bool
+	var mu = &sync.Mutex{}
 
 	go func() {
 		for {
 			time.Sleep(10 * time.Second)
-            if !isRunning {
+			if !isRunning {
 
-                mu.Lock()
-                if isRunning {
-                    mu.Unlock()
-                    return
-                }
-                isRunning = true
-                mu.Unlock()
+				mu.Lock()
+				if isRunning {
+					mu.Unlock()
+					return
+				}
+				isRunning = true
+				mu.Unlock()
 
-                connectionFactory.HandleReadyConnections(kafkaWriter)
+				connectionFactory.HandleReadyConnections(kafkaWriter)
 
-                mu.Lock()
-                isRunning = false
-                mu.Unlock()
+				mu.Lock()
+				isRunning = false
+				mu.Unlock()
 
-            }
+			}
 		}
 	}()
 
 	callbacks := make([]*bpfwrapper.ProbeChannel, 0)
 
-    captureSsl := os.Getenv("CAPTURE_SSL")
-    captureEgress := os.Getenv("CAPTURE_EGRESS")
+	captureSsl := os.Getenv("CAPTURE_SSL")
+	captureEgress := os.Getenv("CAPTURE_EGRESS")
 
-    hooks := make([]bpfwrapper.Kprobe, 0)
-    callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_open_events", socketOpenEventCallback))
-    hooks = append(hooks, level1hooks...)
-    callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_data_events", socketDataEventCallback))
-    if len(captureSsl)==0 || captureSsl=="false" {
-        if  len(captureEgress)>0 && captureEgress=="true" {
-            hooks = append(hooks, level2hooksEgress...)
-            hooks = append(hooks, level3hooksEgress...)
-        } else {
-            hooks = append(hooks, level2hooks...)
-            hooks = append(hooks, level3hooks...)
+	hooks := make([]bpfwrapper.Kprobe, 0)
+	callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_open_events", socketOpenEventCallback))
+	hooks = append(hooks, level1hooks...)
+	callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_data_events", socketDataEventCallback))
+	if len(captureSsl) == 0 || captureSsl == "false" {
+		if len(captureEgress) > 0 && captureEgress == "true" {
+			hooks = append(hooks, level2hooksEgress...)
+			hooks = append(hooks, level3hooksEgress...)
+		} else {
+			hooks = append(hooks, level2hooks...)
+			hooks = append(hooks, level3hooks...)
 
-        }
-    }
-    callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_close_events", socketCloseEventCallback))
-    hooks = append(hooks, level4hooks...)
+		}
+	}
+	callbacks = append(callbacks, bpfwrapper.NewProbeChannel("socket_close_events", socketCloseEventCallback))
+	hooks = append(hooks, level4hooks...)
 
-    if err := bpfwrapper.LaunchPerfBufferConsumers(bpfModule, connectionFactory, callbacks); err != nil {
+	if err := bpfwrapper.LaunchPerfBufferConsumers(bpfModule, connectionFactory, callbacks); err != nil {
 		log.Panic(err)
 	}
 
@@ -1184,33 +1186,33 @@ func run(){
 		log.Panic(err)
 	}
 
-    if captureSsl=="true" {
-        opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
-        if len(opensslPath) > 0 {
-            opensslPath = strings.Replace(opensslPath, "usr","usr_host",1)
-            if len(captureEgress)>0 && captureEgress=="true" {
-                if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooksEgress); err != nil {
-                    log.Printf("%s",err.Error())
-                }
-            } else {
-                if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
-                    log.Printf("%s",err.Error())
-                }
-            }
-        }
-    
-        boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
-        if len(boringLibsslPath) > 0 {
-            boringLibsslPath = strings.Replace(boringLibsslPath, "usr","usr_host",1)
-            if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
-                log.Printf("%s",err.Error())
-            }
-        }
-    }
+	if captureSsl == "true" {
+		opensslPath := os.Getenv("OPENSSL_PATH_AKTO")
+		if len(opensslPath) > 0 {
+			opensslPath = strings.Replace(opensslPath, "usr", "usr_host", 1)
+			if len(captureEgress) > 0 && captureEgress == "true" {
+				if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooksEgress); err != nil {
+					log.Printf("%s", err.Error())
+				}
+			} else {
+				if err := bpfwrapper.AttachUprobes(opensslPath, -1, bpfModule, sslHooks); err != nil {
+					log.Printf("%s", err.Error())
+				}
+			}
+		}
 
-    sig := make(chan os.Signal, 1)
+		boringLibsslPath := os.Getenv("BSSL_PATH_AKTO")
+		if len(boringLibsslPath) > 0 {
+			boringLibsslPath = strings.Replace(boringLibsslPath, "usr", "usr_host", 1)
+			if err := bpfwrapper.AttachUprobes(boringLibsslPath, -1, bpfModule, boringsslHooks); err != nil {
+				log.Printf("%s", err.Error())
+			}
+		}
+	}
+
+	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-    log.Println("Sniffer is ready")
+	log.Println("Sniffer is ready")
 	<-sig
 	log.Println("Signaled to terminate")
 }
